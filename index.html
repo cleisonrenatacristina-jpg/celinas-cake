@@ -15,13 +15,14 @@
 <div id="root"></div>
 <script type="text/babel">
 
-const SHEETS_URL="https://script.google.com/macros/s/AKfycbw4GvYZL8QOmzzJi3eD6pIstqkbFC8q5HJCFytK2T-V565yNvpAtM2hNA0N5Xx1r9yKdQ/exec";
-const ANTHROPIC_KEY=""; // ← Opcional: cole sua chave sk-ant- para ativar WhatsApp com IA
+// ── CONFIG ────────────────────────────────────────────────────
+const SHEETS_URL = "https://script.google.com/macros/s/AKfycbw4GvYZL8QOmzzJi3eD6pIstqkbFC8q5HJCFytK2T-V565yNvpAtM2hNA0N5Xx1r9yKdQ/exec";
+const ANTHROPIC_KEY = ""; // Cole sua chave sk-ant- aqui para ativar WhatsApp com IA
 
+// ── CONSTANTES ────────────────────────────────────────────────
 const ROSA="#d4607a",RE="#b5304a",RC="#fce4ec",RM="#f8bbd0",VE="#4a9b7f",AM="#e8a020";
 const LOGO="https://static.ifood-static.com.br/image/upload/t_thumbnail/logosgde/118fefb7-ed84-42c0-af19-c3c81521be3d/202009252306_A4Vw_i.jpg";
 const PAL=[RE,ROSA,"#e89aaa",VE,AM,"#7abf9e","#f5c6a0","#9b59b6"];
-
 const ST={
   pendente:{label:"Pendente",icon:"⏳",color:"#e8b86d",bg:"#fdf6e3"},
   em_producao:{label:"Em Produção",icon:"👩‍🍳",color:ROSA,bg:RC},
@@ -30,60 +31,90 @@ const ST={
 };
 
 const CAD_BASE=[
-  {cat:"Tradicional",nome:"Ovo Tradicional Ao Leite 250g",preco:55},
-  {cat:"Tradicional",nome:"Ovo Tradicional Branco 250g",preco:62},
-  {cat:"Tradicional",nome:"Ovo Tradicional Misto 250g",preco:62},
-  {cat:"Tradicional",nome:"Ovo Tradicional Ao Leite 500g",preco:100},
-  {cat:"Tradicional",nome:"Ovo Tradicional Branco 500g",preco:115},
-  {cat:"Tradicional",nome:"Ovo Tradicional Misto 500g",preco:115},
-  {cat:"Tradicional",nome:"Ovo Tradicional Ao Leite 800g",preco:150},
-  {cat:"Tradicional",nome:"Ovo Tradicional Branco 800g",preco:170},
-  {cat:"Tradicional",nome:"Ovo Tradicional Misto 800g",preco:170},
+  {cat:"Tradicional / Crocante",nome:"Ovo Tradicional Ao Leite 250g",preco:55},
+  {cat:"Tradicional / Crocante",nome:"Ovo Tradicional Branco 250g",preco:62},
+  {cat:"Tradicional / Crocante",nome:"Ovo Tradicional Misto 250g",preco:62},
+  {cat:"Tradicional / Crocante",nome:"Ovo Tradicional Ao Leite 500g",preco:100},
+  {cat:"Tradicional / Crocante",nome:"Ovo Tradicional Branco 500g",preco:115},
+  {cat:"Tradicional / Crocante",nome:"Ovo Tradicional Misto 500g",preco:115},
+  {cat:"Tradicional / Crocante",nome:"Ovo Tradicional Ao Leite 800g",preco:150},
+  {cat:"Tradicional / Crocante",nome:"Ovo Tradicional Branco 800g",preco:170},
+  {cat:"Tradicional / Crocante",nome:"Ovo Tradicional Misto 800g",preco:170},
   {cat:"Clássicos",nome:"Ovo Clássico Ao Leite 250g",preco:70,obs:"Prestígio, Trufado, Maracujá ou Limão"},
   {cat:"Clássicos",nome:"Ovo Clássico Branco 250g",preco:78,obs:"Prestígio, Trufado, Maracujá ou Limão"},
+  {cat:"Clássicos",nome:"Ovo Clássico Misto 250g",preco:78,obs:"Prestígio, Trufado, Maracujá ou Limão"},
   {cat:"Clássicos",nome:"Ovo Clássico Ao Leite 500g",preco:120,obs:"Prestígio, Trufado, Maracujá ou Limão"},
   {cat:"Clássicos",nome:"Ovo Clássico Branco 500g",preco:135,obs:"Prestígio, Trufado, Maracujá ou Limão"},
+  {cat:"Clássicos",nome:"Ovo Clássico Misto 500g",preco:135,obs:"Prestígio, Trufado, Maracujá ou Limão"},
   {cat:"Clássicos",nome:"Ovo Clássico Ao Leite 800g",preco:180,obs:"Prestígio, Trufado, Maracujá ou Limão"},
   {cat:"Clássicos",nome:"Ovo Clássico Branco 800g",preco:205,obs:"Prestígio, Trufado, Maracujá ou Limão"},
+  {cat:"Clássicos",nome:"Ovo Clássico Misto 800g",preco:205,obs:"Prestígio, Trufado, Maracujá ou Limão"},
   {cat:"Coração",nome:"Ovo Coração Ao Leite 400g",preco:90},
   {cat:"Coração",nome:"Ovo Coração Branco 400g",preco:110},
+  {cat:"Coração",nome:"Ovo Coração Misto 400g",preco:110},
   {cat:"Coração",nome:"Ovo Coração Ao Leite 800g",preco:140},
   {cat:"Coração",nome:"Ovo Coração Branco 800g",preco:160},
+  {cat:"Coração",nome:"Ovo Coração Misto 800g",preco:160},
   {cat:"Ovo de Colher",nome:"Ovo de Colher Ao Leite 500g",preco:85},
   {cat:"Ovo de Colher",nome:"Ovo de Colher Branco 500g",preco:85},
   {cat:"Zero Açúcar",nome:"Ovo Zero Açúcar Ao Leite 250g",preco:105},
-  {cat:"Lembrancinhas",nome:"Ovo Frito 60g",preco:22},
-  {cat:"Lembrancinhas",nome:"Ovo Tablet Recheado 120g",preco:30},
+  {cat:"Zero Açúcar",nome:"Kit Confeiteiro Zero Açúcar",preco:120},
+  {cat:"Lembrancinhas",nome:"Ovo Frito 60g (unidade)",preco:22},
+  {cat:"Lembrancinhas",nome:"Ovo Tablet Recheado 120g (unidade)",preco:30},
   {cat:"Ovo Fatia",nome:"Ovo Fatia 700g (6 fatias)",preco:200,obs:"Caramelo, Pistache, Morango, Kinder, Ferrero, Rafaello"},
   {cat:"Linha Kids",nome:"Ovo Colorê 150g",preco:55},
   {cat:"Linha Kids",nome:"Kit Mão na Massa 150g",preco:55},
   {cat:"Linha Kids",nome:"Kit Confeiteiro Kids 150g",preco:65},
-  {cat:"Brigadeiros Gourmet",nome:"Brigadeiro Limão Siciliano (cento)",preco:240},
-  {cat:"Brigadeiros Gourmet",nome:"Brigadeiro Churros (cento)",preco:240},
-  {cat:"Brigadeiros Gourmet",nome:"Brigadeiro Ninho com Nutella (cento)",preco:240},
-  {cat:"Brigadeiros Gourmet",nome:"Brigadeiro Ferrero Rocher (cento)",preco:240},
-  {cat:"Brigadeiros Gourmet",nome:"Brigadeiro Pistache (cento)",preco:350},
-  {cat:"Brigadeiros Tradicionais",nome:"Brigadeiro Ao Leite (cento)",preco:140},
-  {cat:"Brigadeiros Tradicionais",nome:"Brigadeiro Ninho (cento)",preco:140},
-  {cat:"Brigadeiros Tradicionais",nome:"Brigadeiro Beijinho (cento)",preco:140},
+  {cat:"Linha Kids",nome:"Kit Caça aos Ovos 150g",preco:75,obs:"Inclui adesivos com pegadas do coelho 🐰"},
+  {cat:"Ovos Trio Sabores",nome:"Ovo Trio Clássicos 650g",preco:150,obs:"Pistache, Morango e Caramelo"},
+  {cat:"Ovos Trio Sabores",nome:"Ovo Trio Gourmet 650g",preco:150,obs:"Kinder Bueno, Ferrero e Raffaello"},
+  {cat:"Estrela do Ano",nome:"Ovo Torta de Limão 650g",preco:140},
+  {cat:"Brigadeiros Gourmet",nome:"Brigadeiro Limão Siciliano (cento)",preco:240,obs:"Mín. 25 unid./sabor"},
+  {cat:"Brigadeiros Gourmet",nome:"Brigadeiro Churros (cento)",preco:240,obs:"Mín. 25 unid./sabor"},
+  {cat:"Brigadeiros Gourmet",nome:"Brigadeiro Ninho com Nutella (cento)",preco:240,obs:"Mín. 25 unid./sabor"},
+  {cat:"Brigadeiros Gourmet",nome:"Brigadeiro Romeu e Julieta (cento)",preco:240,obs:"Mín. 25 unid./sabor"},
+  {cat:"Brigadeiros Gourmet",nome:"Brigadeiro Ferrero Rocher (cento)",preco:240,obs:"Mín. 25 unid./sabor"},
+  {cat:"Brigadeiros Gourmet",nome:"Brigadeiro Pistache (cento)",preco:350,obs:"Mín. 25 unid./sabor"},
+  {cat:"Brigadeiros Especiais",nome:"Brigadeiro Meio Amargo 70% (cento)",preco:350,obs:"Mín. 25 unid./sabor"},
+  {cat:"Brigadeiros Especiais",nome:"Brigadeiro Café (cento)",preco:350,obs:"Mín. 25 unid./sabor"},
+  {cat:"Brigadeiros Especiais",nome:"Brigadeiro Caramelo Salgado (cento)",preco:350,obs:"Mín. 25 unid./sabor"},
+  {cat:"Brigadeiros Especiais",nome:"Brigadeiro Pistache (cento)",preco:350,obs:"Mín. 25 unid./sabor"},
+  {cat:"Brigadeiros Especiais",nome:"Brigadeiro Frutas Vermelhas Callebaut (cento)",preco:550,obs:"Chocolate Callebaut"},
+  {cat:"Brigadeiros Tradicionais",nome:"Brigadeiro Ao Leite (cento)",preco:140,obs:"Mín. 50 unid."},
+  {cat:"Brigadeiros Tradicionais",nome:"Brigadeiro Ninho (cento)",preco:140,obs:"Mín. 50 unid."},
+  {cat:"Brigadeiros Tradicionais",nome:"Brigadeiro Casadinho Preto e Branco (cento)",preco:140,obs:"Mín. 50 unid."},
+  {cat:"Brigadeiros Tradicionais",nome:"Brigadeiro Paçoca (cento)",preco:140,obs:"Mín. 50 unid."},
+  {cat:"Brigadeiros Tradicionais",nome:"Brigadeiro Beijinho (cento)",preco:140,obs:"Mín. 50 unid."},
   {cat:"Doces Finos",nome:"Brownie (unidade)",preco:12},
   {cat:"Doces Finos",nome:"Bem Casado (unidade)",preco:4.90},
   {cat:"Doces Finos",nome:"Trufinha (unidade)",preco:3.50},
+  {cat:"Doces Finos",nome:"Bombom Caramelo Salgado (unidade)",preco:3.50},
+  {cat:"Doces Finos",nome:"Copinho Avelã (unidade)",preco:4.00},
+  {cat:"Doces Finos",nome:"Copinho Morango (unidade)",preco:4.00},
+  {cat:"Doces Finos",nome:"Conchinha (unidade)",preco:4.50},
 ];
 
+// ── HELPERS ───────────────────────────────────────────────────
 const fmt=v=>`R$ ${Number(v).toFixed(2).replace(".",",")}`;
 const getDias=(dr,ag)=>{if(!dr)return null;return Math.ceil((new Date(dr+"T00:00:00")-new Date(ag.toDateString()))/86400000);};
 const getPrazo=(d,s)=>{if(s==="entregue"||d===null)return null;if(d<0)return{label:`${Math.abs(d)}d atrasado`,color:"#e05555",bg:"#fff0f0",icon:"🚨"};if(d===0)return{label:"Hoje!",color:"#e07020",bg:"#fff5e0",icon:"⚡"};if(d===1)return{label:"Amanhã",color:AM,bg:"#fffbe6",icon:"⏰"};if(d<=3)return{label:`${d}d`,color:ROSA,bg:RC,icon:"📅"};return{label:`${d}d`,color:"#888",bg:"#f5f5f5",icon:"📅"};};
 const getBadge=o=>({bg:o.pago?"#eaf5f1":o.pagoParcial?"#fff8ec":"#fff5e0",color:o.pago?VE:o.pagoParcial?AM:"#e8a020",text:o.pago?"💰 Pago":o.pagoParcial?`💛 Entrada ${fmt(o.entrada||0)}`:"⏳ A pagar"});
 
-async function apiLoad(){try{const r=await fetch(`${SHEETS_URL}?action=load`);const d=await r.json();if(d.ok&&d.orders?.length>0)return d.orders;}catch(e){console.error(e);}return[];}
-async function apiSave(orders){try{const p=new URLSearchParams();p.append("action","save");p.append("orders",JSON.stringify(orders));await fetch(SHEETS_URL,{method:"POST",body:p});}catch(e){console.error(e);}}
+// ── API SHEETS ────────────────────────────────────────────────
+async function apiLoad(){
+  try{const r=await fetch(`${SHEETS_URL}?action=load`);const d=await r.json();if(d.ok&&d.orders?.length>0)return d.orders;}catch(e){console.error(e);}return[];
+}
+async function apiSave(orders){
+  try{const p=new URLSearchParams();p.append("action","save");p.append("orders",JSON.stringify(orders));await fetch(SHEETS_URL,{method:"POST",body:p});}catch(e){console.error(e);}
+}
 
 const {useState,useEffect,useMemo}=React;
 const {BarChart,Bar,XAxis,YAxis,Tooltip,ResponsiveContainer,CartesianGrid,PieChart,Pie,Cell,Legend}=Recharts;
 
-// ── WhatsApp ──────────────────────────────────────────────────
-function WaBubble({msg,side}){return(<div style={{display:"flex",justifyContent:side==="right"?"flex-end":"flex-start",marginBottom:6}}><div style={{maxWidth:"78%",padding:"9px 14px",borderRadius:side==="right"?"18px 4px 18px 18px":"4px 18px 18px 18px",background:side==="right"?"#dcf8c6":"#fff",boxShadow:"0 1px 4px rgba(0,0,0,.1)",fontSize:13,lineHeight:1.5,whiteSpace:"pre-wrap",wordBreak:"break-word"}}>{msg}</div></div>);}
+// ── WHATSAPP ──────────────────────────────────────────────────
+function WaBubble({msg,side}){
+  return(<div style={{display:"flex",justifyContent:side==="right"?"flex-end":"flex-start",marginBottom:6}}><div style={{maxWidth:"78%",padding:"9px 14px",borderRadius:side==="right"?"18px 4px 18px 18px":"4px 18px 18px 18px",background:side==="right"?"#dcf8c6":"#fff",boxShadow:"0 1px 4px rgba(0,0,0,.1)",fontSize:13,lineHeight:1.5,whiteSpace:"pre-wrap",wordBreak:"break-word"}}>{msg}</div></div>);
+}
 
 function WhatsAppPage({onSave}){
   const[msgs,setMsgs]=useState([{s:"left",t:"Oi!! Quero fazer um pedido 😊"},{s:"right",t:"Olá! Bem-vinda à Celina's Cake 🎂🌸\nQual seria o seu pedido?"}]);
@@ -91,7 +122,7 @@ function WhatsAppPage({onSave}){
   const send=async()=>{
     if(!inp.trim()||load)return;
     const txt=inp.trim();setInp("");setMsgs(m=>[...m,{s:"left",t:txt}]);setLoad(true);setPrev(null);
-    if(!ANTHROPIC_KEY){setMsgs(m=>[...m,{s:"right",t:"⚠️ Chave da API não configurada. Adicione sua chave ANTHROPIC_KEY no arquivo index.html."}]);setLoad(false);return;}
+    if(!ANTHROPIC_KEY){setMsgs(m=>[...m,{s:"right",t:"⚠️ Chave da API não configurada. Adicione ANTHROPIC_KEY no index.html."}]);setLoad(false);return;}
     try{
       const hoje=new Date().toISOString().split("T")[0];
       const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":ANTHROPIC_KEY,"anthropic-version":"2023-06-01"},body:JSON.stringify({model:"claude-3-haiku-20240307",max_tokens:600,system:`Atendente Celina's Cake. Retorne SOMENTE JSON sem markdown:\n{"cliente":string|null,"telefone":string|null,"itens":string,"valor":number|null,"data_retirada":"YYYY-MM-DD"|null,"tipo_entrega":"retirada"|"entrega","endereco":string|null,"observacoes":string|null}\nHoje:${hoje}`,messages:[{role:"user",content:txt}]})});
@@ -142,7 +173,7 @@ function WhatsAppPage({onSave}){
       )}
       <div style={{marginTop:16,background:"#fff8f4",borderRadius:14,padding:16,border:"1px solid #f0dde4"}}>
         <div style={{fontSize:11,color:"#aaa",marginBottom:8,textTransform:"uppercase",letterSpacing:1}}>💡 Exemplos</div>
-        {["Oi! Quero 2 ovos tradicionais ao leite 250g pra retirar dia 15/04. Sou a Maria.","Bom dia! Me chamo Ana, quero um Ovo Fatia e Ovo Coração Branco 400g pra sábado."].map((ex,i)=>(
+        {["Oi! Quero 3 ovos tradicionais ao leite 250g pra retirar dia 15/04. Sou a Maria.","Bom dia! Me chamo Ana, quero um Ovo Fatia e Ovo Coração Branco 400g pra sábado."].map((ex,i)=>(
           <div key={i} onClick={()=>setInp(ex)} style={{padding:"8px 12px",borderRadius:10,background:"#fff",border:"1px solid #f0dde4",fontSize:12,color:"#555",cursor:"pointer",marginBottom:6,lineHeight:1.5}}>"{ex}"</div>
         ))}
       </div>
@@ -150,7 +181,7 @@ function WhatsAppPage({onSave}){
   );
 }
 
-// ── Preços ────────────────────────────────────────────────────
+// ── PREÇOS ────────────────────────────────────────────────────
 function PrecosPage({cardapio,precos,setPrecos}){
   const[catF,setCatF]=useState("Todas");const[busca,setBusca]=useState("");const[saved,setSaved]=useState(false);
   const cats=["Todas",...Array.from(new Set(cardapio.map(p=>p.cat)))];
@@ -202,7 +233,7 @@ function PrecosPage({cardapio,precos,setPrecos}){
   );
 }
 
-// ── Pagamento ─────────────────────────────────────────────────
+// ── PAGAMENTO ─────────────────────────────────────────────────
 function PagBtn({order,onUpdate}){
   const[modo,setModo]=useState(null);const[ent,setEnt]=useState(order.entrada||"");
   if(modo==="parcial")return(
@@ -228,7 +259,7 @@ function PagBtn({order,onUpdate}){
   );
 }
 
-// ── Card Pedido ───────────────────────────────────────────────
+// ── CARD PEDIDO ───────────────────────────────────────────────
 function PedidoCard({o,idx,agora,onStatus,onPagto,onEdit,onDelete}){
   const st=ST[o.status]||ST.pendente;const dias=getDias(o.data_retirada,agora);const prazo=getPrazo(dias,o.status);const bp=getBadge(o);
   return(
@@ -243,7 +274,8 @@ function PedidoCard({o,idx,agora,onStatus,onPagto,onEdit,onDelete}){
         </div>
         <div style={{fontSize:13,color:"#555",marginBottom:3}}>🥚 {o.itens}</div>
         <div style={{display:"flex",gap:10,fontSize:11,color:"#999",flexWrap:"wrap"}}>
-          {o.telefone&&<span>📞 {o.telefone}</span>}{o.data_retirada&&<span>📅 {new Date(o.data_retirada+"T12:00").toLocaleDateString("pt-BR")}</span>}
+          {o.telefone&&<span>📞 {o.telefone}</span>}
+          {o.data_retirada&&<span>📅 {new Date(o.data_retirada+"T12:00").toLocaleDateString("pt-BR")}{dias!==null&&o.status!=="entregue"?` · ${dias<0?Math.abs(dias)+"d atrasado":dias===0?"hoje":dias+"d restantes"}`:""}</span>}
           {o.valor&&<span>💵 {fmt(o.valor)}</span>}{o.endereco&&<span>📍 {o.endereco}</span>}
         </div>
         {o.observacoes&&<div style={{marginTop:4,fontSize:11,color:"#bbb",fontStyle:"italic"}}>📝 {o.observacoes}</div>}
@@ -261,10 +293,11 @@ function PedidoCard({o,idx,agora,onStatus,onPagto,onEdit,onDelete}){
   );
 }
 
-// ── Form Modal ────────────────────────────────────────────────
+// ── FORM MODAL ────────────────────────────────────────────────
 function FormModal({initial,onSave,onClose,cardapio}){
+  const parseIni=()=>{if(!initial?.itens)return[];return initial.itens.split(" + ").reduce((acc,parte)=>{const m=parte.match(/^(\d+)x\s+(.+)$/);const nome=m?m[2].trim():parte.trim();const qtd=m?parseInt(m[1]):1;const prod=cardapio.find(p=>p.nome===nome);if(prod)acc.push({...prod,qtd});return acc;},[]);};
   const[f,setF]=useState({cliente:"",telefone:"",data_retirada:"",tipo_entrega:"retirada",endereco:"",observacoes:"",forma_pagamento:"PIX",itens:"",valor:"",...initial});
-  const[sel,setSel]=useState([]);const[busca,setBusca]=useState("");const[cat,setCat]=useState("Todas");
+  const[sel,setSel]=useState(parseIni);const[busca,setBusca]=useState("");const[cat,setCat]=useState("Todas");
   const set=(k,v)=>setF(p=>({...p,[k]:v}));
   const cats=["Todas",...Array.from(new Set(cardapio.map(p=>p.cat)))];
   const fil=cardapio.filter(p=>(cat==="Todas"||p.cat===cat)&&p.nome.toLowerCase().includes(busca.toLowerCase()));
@@ -276,7 +309,7 @@ function FormModal({initial,onSave,onClose,cardapio}){
   const inp=(label,key,type="text",ph="")=>(<div style={{marginBottom:12}}><label style={{fontSize:10,color:"#aaa",display:"block",marginBottom:3,textTransform:"uppercase",letterSpacing:1}}>{label}</label><input type={type} value={f[key]||""} onChange={e=>set(key,e.target.value)} placeholder={ph} style={{width:"100%",padding:"9px 12px",borderRadius:10,border:"1.5px solid #f0dde4",fontSize:13,outline:"none",boxSizing:"border-box"}}/></div>);
   return(
     <div style={{position:"fixed",inset:0,background:"rgba(180,48,74,.18)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:900,padding:16}}>
-      <div style={{background:"#fff",borderRadius:20,padding:24,width:"100%",maxWidth:520,boxShadow:"0 8px 40px rgba(180,48,74,.18)",maxHeight:"92vh",overflowY:"auto"}}>
+      <div style={{background:"#fff",borderRadius:20,padding:24,width:"100%",maxWidth:560,boxShadow:"0 8px 40px rgba(180,48,74,.18)",maxHeight:"92vh",overflowY:"auto"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}><h3 style={{margin:0,color:RE,fontSize:17}}>{f.id?"✏️ Editar":"✨ Novo Pedido"}</h3><button onClick={onClose} style={{background:"none",border:"none",fontSize:22,cursor:"pointer",color:"#ccc"}}>×</button></div>
         {inp("Cliente *","cliente","text","Nome do cliente")}{inp("Telefone","telefone","tel","(11) 99999-9999")}
         <div style={{marginBottom:14}}>
@@ -285,7 +318,7 @@ function FormModal({initial,onSave,onClose,cardapio}){
           <div style={{maxHeight:160,overflowY:"auto",border:"1.5px solid #f0dde4",borderRadius:10,padding:4}}>
             {fil.map((p,i)=>{const s=sel.find(x=>x.nome===p.nome);return(<div key={i} onClick={()=>tog(p)} style={{padding:"7px 10px",borderRadius:8,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,background:s?RC:"transparent",borderLeft:s?`3px solid ${RE}`:"3px solid transparent",marginBottom:2}}><div style={{flex:1}}><div style={{fontSize:12,fontWeight:s?700:400}}>{p.nome}</div>{p.obs&&<div style={{fontSize:10,color:"#bbb"}}>{p.obs}</div>}</div><span style={{fontSize:12,fontWeight:700,color:RE}}>{fmt(p.preco)}</span>{s&&<span style={{fontSize:14,color:RE}}>✓</span>}</div>);})}
           </div>
-          {sel.length>0&&(<div style={{marginTop:10,background:RC,borderRadius:12,padding:12}}>{sel.map((p,i)=>(<div key={i} style={{display:"flex",alignItems:"center",gap:8,marginBottom:6,background:"#fff",borderRadius:8,padding:"7px 10px"}}><div style={{flex:1,fontSize:12}}>{p.nome}</div><div style={{display:"flex",alignItems:"center",gap:4}}><button onClick={e=>{e.stopPropagation();setQ(p.nome,(p.qtd||1)-1);}} style={{width:22,height:22,borderRadius:"50%",border:`1px solid ${RM}`,background:"#fff",color:RE,fontSize:14,cursor:"pointer"}}>−</button><input type="number" min="1" value={p.qtd||1} onClick={e=>e.stopPropagation()} onChange={e=>setQ(p.nome,e.target.value)} style={{width:36,textAlign:"center",border:`1px solid ${RM}`,borderRadius:6,fontSize:12,padding:"2px 4px",outline:"none"}}/><button onClick={e=>{e.stopPropagation();setQ(p.nome,(p.qtd||1)+1);}} style={{width:22,height:22,borderRadius:"50%",border:`1px solid ${RM}`,background:RE,color:"#fff",fontSize:14,cursor:"pointer"}}>+</button></div><div style={{fontSize:12,fontWeight:700,color:RE,minWidth:64,textAlign:"right"}}>{fmt(p.preco*(p.qtd||1))}</div><button onClick={e=>{e.stopPropagation();tog(p);}} style={{background:"none",border:"none",color:"#e07070",cursor:"pointer",fontSize:14,padding:0}}>✕</button></div>))}<div style={{display:"flex",justifyContent:"space-between",paddingTop:10,borderTop:`1.5px solid ${RM}`,marginTop:4}}><span style={{fontSize:12,color:"#888"}}>{sel.reduce((s,p)=>s+(p.qtd||1),0)} item(ns)</span><span style={{fontSize:16,fontWeight:700,color:RE}}>Total: {fmt(total)}</span></div></div>)}
+          {sel.length>0&&(<div style={{marginTop:10,background:RC,borderRadius:12,padding:12}}><div style={{fontSize:10,color:"#aaa",textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>🛒 Itens</div>{sel.map((p,i)=>(<div key={i} style={{display:"flex",alignItems:"center",gap:8,marginBottom:6,background:"#fff",borderRadius:8,padding:"7px 10px"}}><div style={{flex:1,fontSize:12}}>{p.nome}</div><div style={{display:"flex",alignItems:"center",gap:4}}><button onClick={e=>{e.stopPropagation();setQ(p.nome,(p.qtd||1)-1);}} style={{width:22,height:22,borderRadius:"50%",border:`1px solid ${RM}`,background:"#fff",color:RE,fontSize:14,cursor:"pointer"}}>−</button><input type="number" min="1" value={p.qtd||1} onClick={e=>e.stopPropagation()} onChange={e=>setQ(p.nome,e.target.value)} style={{width:36,textAlign:"center",border:`1px solid ${RM}`,borderRadius:6,fontSize:12,padding:"2px 4px",outline:"none"}}/><button onClick={e=>{e.stopPropagation();setQ(p.nome,(p.qtd||1)+1);}} style={{width:22,height:22,borderRadius:"50%",border:`1px solid ${RM}`,background:RE,color:"#fff",fontSize:14,cursor:"pointer"}}>+</button></div><div style={{fontSize:12,fontWeight:700,color:RE,minWidth:64,textAlign:"right"}}>{fmt(p.preco*(p.qtd||1))}</div><button onClick={e=>{e.stopPropagation();tog(p);}} style={{background:"none",border:"none",color:"#e07070",cursor:"pointer",fontSize:14,padding:0}}>✕</button></div>))}<div style={{display:"flex",justifyContent:"space-between",paddingTop:10,borderTop:`1.5px solid ${RM}`,marginTop:4}}><span style={{fontSize:12,color:"#888"}}>{sel.reduce((s,p)=>s+(p.qtd||1),0)} item(ns)</span><span style={{fontSize:16,fontWeight:700,color:RE}}>Total: {fmt(total)}</span></div></div>)}
         </div>
         {sel.length===0&&(<div style={{marginBottom:12}}><label style={{fontSize:10,color:"#aaa",display:"block",marginBottom:3,textTransform:"uppercase",letterSpacing:1}}>Descreva manualmente</label><input value={f.itens} onChange={e=>set("itens",e.target.value)} placeholder="Ex: Ovo personalizado..." style={{width:"100%",padding:"9px 12px",borderRadius:10,border:"1.5px solid #f0dde4",fontSize:13,outline:"none",boxSizing:"border-box"}}/></div>)}
         <div style={{display:"grid",gridTemplateColumns:sel.length>0?"1fr":"1fr 1fr",gap:10}}>{sel.length===0&&<div>{inp("Valor (R$)","valor","number","0,00")}</div>}<div style={{gridColumn:sel.length>0?"1/-1":"auto"}}>{inp("Data retirada","data_retirada","date")}</div></div>
@@ -299,7 +332,7 @@ function FormModal({initial,onSave,onClose,cardapio}){
   );
 }
 
-// ── App Principal ─────────────────────────────────────────────
+// ── APP PRINCIPAL ─────────────────────────────────────────────
 function App(){
   const[view,setView]=useState("pedidos");
   const[orders,setOrders]=useState([]);
@@ -311,7 +344,12 @@ function App(){
   const[agora,setAgora]=useState(new Date());
   const[nextId,setNextId]=useState(1);
   const[precos,setPrecos]=useState(()=>Object.fromEntries(CAD_BASE.map(p=>[p.nome,p.preco])));
+  const[catFiltro,setCatFiltro]=useState("Todas");
+  const[showFiltros,setShowFiltros]=useState(false);
   const[filtroMes,setFiltroMes]=useState("");
+  const[filtroValMin,setFiltroValMin]=useState("");
+  const[filtroValMax,setFiltroValMax]=useState("");
+  const[filtroPago,setFiltroPago]=useState("todos");
 
   const cardapio=useMemo(()=>CAD_BASE.map(p=>({...p,preco:precos[p.nome]??p.preco})),[precos]);
 
@@ -333,34 +371,58 @@ function App(){
   const updSt=async(id,s)=>{const n=orders.map(x=>x.id===id?{...x,status:s}:x);setOrders(n);await persist(n);};
   const updPag=async(id,tipo,val)=>{const n=orders.map(x=>x.id===id?{...x,pago:tipo==="pago",pagoParcial:tipo==="parcial",entrada:tipo==="parcial"?parseFloat(val)||0:tipo==="pago"?x.valor:0}:x);setOrders(n);await persist(n);};
 
-  const meses=useMemo(()=>Array.from(new Set(orders.map(o=>o.data_retirada?.slice(0,7)).filter(Boolean))).sort(),[orders]);
-  const ordFil=useMemo(()=>filtroMes?orders.filter(o=>o.data_retirada?.slice(0,7)===filtroMes):orders,[orders,filtroMes]);
+  const mesesDisp=useMemo(()=>Array.from(new Set(orders.map(o=>o.data_retirada?.slice(0,7)).filter(Boolean))).sort(),[orders]);
+  const filtrosAtivos=filtroMes||filtroValMin||filtroValMax||filtroPago!=="todos";
 
-  const recebido=ordFil.filter(o=>o.pago).reduce((s,o)=>s+(o.valor||0),0)+ordFil.filter(o=>o.pagoParcial).reduce((s,o)=>s+(o.entrada||0),0);
-  const aReceber=ordFil.filter(o=>!o.pago&&!o.pagoParcial).reduce((s,o)=>s+(o.valor||0),0)+ordFil.filter(o=>o.pagoParcial).reduce((s,o)=>s+((o.valor||0)-(o.entrada||0)),0);
+  const ordFil=useMemo(()=>orders.filter(o=>{
+    if(filtroMes&&o.data_retirada?.slice(0,7)!==filtroMes)return false;
+    if(filtroValMin!==""&&(o.valor||0)<parseFloat(filtroValMin))return false;
+    if(filtroValMax!==""&&(o.valor||0)>parseFloat(filtroValMax))return false;
+    if(filtroPago==="pago"&&!o.pago)return false;
+    if(filtroPago==="nao_pago"&&o.pago)return false;
+    return true;
+  }),[orders,filtroMes,filtroValMin,filtroValMax,filtroPago]);
 
-  const lista=useMemo(()=>{const base=filter==="todos"?orders:orders.filter(o=>o.status===filter);return[...base].sort((a,b)=>{if(a.status==="entregue"&&b.status!=="entregue")return 1;if(b.status==="entregue"&&a.status!=="entregue")return -1;if(!a.data_retirada)return 1;if(!b.data_retirada)return -1;return a.data_retirada>b.data_retirada?1:-1;});},[orders,filter]);
+  const resumoF=useMemo(()=>({
+    total:ordFil.length,
+    recebido:ordFil.filter(o=>o.pago).reduce((s,o)=>s+(o.valor||0),0)+ordFil.filter(o=>o.pagoParcial).reduce((s,o)=>s+(o.entrada||0),0),
+    aReceber:ordFil.filter(o=>!o.pago&&!o.pagoParcial).reduce((s,o)=>s+(o.valor||0),0)+ordFil.filter(o=>o.pagoParcial).reduce((s,o)=>s+((o.valor||0)-(o.entrada||0)),0),
+    totalValor:ordFil.reduce((s,o)=>s+(o.valor||0),0),
+  }),[ordFil]);
+
+  const lista=useMemo(()=>{const base=filter==="todos"?ordFil:ordFil.filter(o=>o.status===filter);return[...base].sort((a,b)=>{if(a.status==="entregue"&&b.status!=="entregue")return 1;if(b.status==="entregue"&&a.status!=="entregue")return -1;if(!a.data_retirada)return 1;if(!b.data_retirada)return -1;return a.data_retirada>b.data_retirada?1:-1;});},[ordFil,filter]);
   const naoEnt=lista.filter(o=>o.status!=="entregue");
   const atrasados=orders.filter(o=>o.status!=="entregue"&&getDias(o.data_retirada,agora)<0);
 
-  // gráficos
-  const prodData=useMemo(()=>{const m={};ordFil.forEach(o=>{if(!o.itens)return;o.itens.split(" + ").forEach(it=>{const k=it.replace(/^\d+x /,"").trim();m[k]=(m[k]||0)+1;});});return Object.entries(m).map(([name,qty])=>({name,qty})).sort((a,b)=>b.qty-a.qty).slice(0,8);},[ordFil]);
-  const valData=useMemo(()=>{const m={};ordFil.forEach(o=>{if(!o.itens)return;const parts=o.itens.split(" + ");const unit=(o.valor||0)/parts.length;parts.forEach(it=>{const k=it.replace(/^\d+x /,"").trim();m[k]=(m[k]||0)+unit;});});return Object.entries(m).map(([name,total])=>({name,total:parseFloat(total.toFixed(2))})).sort((a,b)=>b.total-a.total).slice(0,8);},[ordFil]);
-  const stData=useMemo(()=>Object.entries(ST).map(([k,v])=>({name:v.label,value:ordFil.filter(o=>o.status===k).length,color:v.color})).filter(d=>d.value>0),[ordFil]);
-  const fatData=useMemo(()=>{const m={};orders.forEach(o=>{const mm=o.data_retirada?o.data_retirada.slice(0,7):"?";if(!m[mm])m[mm]={mes:mm,recebido:0,aReceber:0};o.pago?m[mm].recebido+=(o.valor||0):m[mm].aReceber+=(o.valor||0);});return Object.values(m).sort((a,b)=>a.mes>b.mes?1:-1).map(d=>({...d,mes:d.mes==="?"?"?":new Date(d.mes+"-01").toLocaleDateString("pt-BR",{month:"short",year:"2-digit"})}));},[orders]);
+  const totalRecebido=orders.filter(o=>o.pago).reduce((s,o)=>s+(o.valor||0),0)+orders.filter(o=>o.pagoParcial).reduce((s,o)=>s+(o.entrada||0),0);
+  const totalAReceber=orders.filter(o=>!o.pago&&!o.pagoParcial).reduce((s,o)=>s+(o.valor||0),0)+orders.filter(o=>o.pagoParcial).reduce((s,o)=>s+((o.valor||0)-(o.entrada||0)),0);
+  const totalPendentes=orders.filter(o=>o.status==="pendente"||o.status==="em_producao").length;
+  const totalProntos=orders.filter(o=>o.status==="pronto").length;
 
-  if(loading)return(<div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#fdf4f6",flexDirection:"column",gap:16}}><div style={{fontSize:48}}>🎂</div><div style={{fontSize:16,color:RE,fontWeight:700}}>Carregando pedidos...</div></div>);
+  const prodData=useMemo(()=>{const m={};orders.forEach(o=>{const k=o.itens?.split("(")[0].trim()||"Outros";m[k]=(m[k]||0)+1;});return Object.entries(m).map(([name,qty])=>({name,qty})).sort((a,b)=>b.qty-a.qty);},[orders]);
+  const valData=useMemo(()=>{const m={};orders.forEach(o=>{const k=o.itens?.split("(")[0].trim()||"Outros";m[k]=(m[k]||0)+(o.valor||0);});return Object.entries(m).map(([name,total])=>({name,total})).sort((a,b)=>b.total-a.total);},[orders]);
+  const stData=useMemo(()=>Object.entries(ST).map(([k,v])=>({name:v.label,value:orders.filter(o=>o.status===k).length,color:v.color})).filter(d=>d.value>0),[orders]);
+  const fatData=useMemo(()=>{const m={};orders.forEach(o=>{const mm=o.data_retirada?o.data_retirada.slice(0,7):"?";if(!m[mm])m[mm]={mes:mm,recebido:0,aReceber:0};o.pago?m[mm].recebido+=(o.valor||0):m[mm].aReceber+=(o.valor||0);});return Object.values(m).sort((a,b)=>a.mes>b.mes?1:-1).map(d=>({...d,mes:d.mes==="?"?"?":new Date(d.mes+"-01").toLocaleDateString("pt-BR",{month:"short",year:"2-digit"})}));},[orders]);
+  const cats=["Todas",...Array.from(new Set(cardapio.map(p=>p.cat)))];
+
+  if(loading)return(<div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#fdf4f6",flexDirection:"column",gap:16}}><div style={{fontSize:48}}>🎂</div><div style={{fontSize:16,color:RE,fontWeight:700}}>Carregando pedidos...</div><div style={{fontSize:12,color:"#aaa"}}>Buscando dados salvos</div></div>);
 
   return(
     <div style={{fontFamily:"Georgia,serif",minHeight:"100vh",background:"#fdf4f6",color:"#3a1a22"}}>
       <header style={{background:`linear-gradient(135deg,${RE},${ROSA} 60%,#e89aaa)`,boxShadow:"0 4px 20px rgba(180,48,74,.25)"}}>
         <div style={{maxWidth:1080,margin:"0 auto",padding:"14px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
           <div style={{display:"flex",alignItems:"center",gap:12}}>
-            <div style={{width:48,height:48,borderRadius:12,overflow:"hidden",background:"#fff",padding:3}}><img src={LOGO} alt="Logo" style={{width:"100%",height:"100%",objectFit:"cover",borderRadius:9}}/></div>
-            <div><div style={{fontSize:20,fontWeight:"bold",fontStyle:"italic",color:"#fff",letterSpacing:1}}>Celina's Cake</div><div style={{fontSize:9,letterSpacing:3,color:"rgba(255,255,255,.6)",textTransform:"uppercase"}}>🐣 Páscoa 2026 · {saving?"💾 salvando...":"✓ salvo"}</div></div>
+            <div style={{width:48,height:48,borderRadius:12,overflow:"hidden",background:"#fff",padding:3,boxShadow:"0 2px 10px rgba(0,0,0,.15)"}}><img src={LOGO} alt="Logo" style={{width:"100%",height:"100%",objectFit:"cover",borderRadius:9}}/></div>
+            <div>
+              <div style={{fontSize:20,fontWeight:"bold",fontStyle:"italic",color:"#fff",letterSpacing:1}}>Celina's Cake</div>
+              <div style={{display:"flex",alignItems:"center",gap:6}}>
+                <div style={{fontSize:9,letterSpacing:3,color:"rgba(255,255,255,.6)",textTransform:"uppercase"}}>🐣 Páscoa 2026</div>
+                <span style={{fontSize:9,color:"rgba(255,255,255,.5)"}}>{saving?"💾 salvando...":"✓ salvo"}</span>
+              </div>
+            </div>
           </div>
           <nav style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-            {[["pedidos","📋 Pedidos"],["whatsapp","💬 WhatsApp"],["dashboard","📊 Painel"],["precos","💲 Preços"],["cardapio","🍫 Cardápio"]].map(([v,l])=>(
+            {[["dashboard","📊 Painel"],["whatsapp","💬 WhatsApp"],["pedidos","📋 Pedidos"],["cardapio","🍫 Cardápio"],["precos","💲 Preços"]].map(([v,l])=>(
               <button key={v} onClick={()=>setView(v)} style={{padding:"7px 15px",borderRadius:20,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,background:view===v?"#fff":"rgba(255,255,255,.2)",color:view===v?RE:"#fff"}}>{l}</button>
             ))}
           </nav>
@@ -368,1104 +430,87 @@ function App(){
       </header>
 
       <main style={{maxWidth:1080,margin:"0 auto",padding:"24px 20px"}}>
+
         {atrasados.length>0&&(<div style={{background:"#fff0f0",border:"2px solid #e05555",borderRadius:16,padding:"14px 18px",marginBottom:20}}><div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}><span style={{fontSize:22}}>🚨</span><div style={{fontWeight:700,color:"#e05555",fontSize:15}}>{atrasados.length} pedido(s) atrasado(s)!</div></div>{atrasados.map(o=>(<div key={o.id} style={{background:"#fff",borderRadius:10,padding:"10px 14px",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",borderLeft:"4px solid #e05555",marginBottom:6}}><div style={{flex:1}}><span style={{fontWeight:700,fontSize:13}}>{o.cliente}</span><span style={{fontSize:12,color:"#aaa",marginLeft:8}}>{o.itens}</span></div><span style={{fontSize:11,color:"#e05555",fontWeight:700}}>{Math.abs(getDias(o.data_retirada,agora))}d atrasado</span><button onClick={()=>updSt(o.id,"entregue")} style={{padding:"4px 10px",borderRadius:8,border:"none",background:"#e05555",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer"}}>Marcar entregue</button></div>))}</div>)}
 
         {view==="whatsapp"&&<WhatsAppPage onSave={saveOrder}/>}
-
         {view==="precos"&&<PrecosPage cardapio={cardapio} precos={precos} setPrecos={setPrecos}/>}
-
-        {view==="pedidos"&&(
-          <>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:12}}>
-              <h2 style={{margin:0,fontSize:20,color:RE}}>📋 Pedidos ({orders.length})</h2>
-              <div style={{display:"flex",gap:8}}><button onClick={()=>setView("whatsapp")} style={{padding:"9px 14px",borderRadius:22,border:"2px solid #25d366",background:"#f0fdf4",color:"#25d366",fontSize:12,fontWeight:700,cursor:"pointer"}}>💬 WhatsApp</button><button onClick={()=>setForm({})} style={{padding:"9px 20px",borderRadius:22,border:"none",background:`linear-gradient(135deg,${RE},${ROSA})`,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>+ Novo Pedido</button></div>
-            </div>
-            <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap"}}>
-              {[["todos","Todos"],...Object.entries(ST).map(([k,v])=>[k,`${v.icon} ${v.label}`])].map(([k,l])=>(<button key={k} onClick={()=>setFilter(k)} style={{padding:"6px 13px",borderRadius:20,border:"2px solid",borderColor:filter===k?RE:"#f0dde4",background:filter===k?RE:"#fff",color:filter===k?"#fff":"#888",fontSize:12,fontWeight:700,cursor:"pointer"}}>{l}</button>))}
-            </div>
-            {lista.length===0?(<div style={{textAlign:"center",padding:"60px 0",color:"#ccc"}}><div style={{fontSize:52}}>🥚</div><div style={{marginTop:10,fontSize:15}}>Nenhum pedido ainda</div><button onClick={()=>setForm({})} style={{marginTop:14,padding:"9px 22px",borderRadius:22,border:"none",background:`linear-gradient(135deg,${RE},${ROSA})`,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>+ Criar primeiro pedido</button></div>):lista.map(o=>(<PedidoCard key={o.id} o={o} idx={naoEnt.indexOf(o)} agora={agora} onStatus={updSt} onPagto={(tipo,val)=>updPag(o.id,tipo,val)} onEdit={setForm} onDelete={delOrder}/>))}
-          </>
-        )}
 
         {view==="dashboard"&&(
           <>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:12}}>
-              <h2 style={{margin:0,fontSize:20,color:RE}}>📊 Painel</h2>
-              <div style={{display:"flex",alignItems:"center",gap:8}}>
-                <label style={{fontSize:12,color:"#aaa"}}>📅 Filtrar mês:</label>
-                <select value={filtroMes} onChange={e=>setFiltroMes(e.target.value)} style={{padding:"7px 12px",borderRadius:10,border:`1.5px solid ${RM}`,fontSize:12,outline:"none",background:"#fff"}}>
-                  <option value="">Todos</option>
-                  {meses.map(m=><option key={m} value={m}>{new Date(m+"-01").toLocaleDateString("pt-BR",{month:"long",year:"numeric"})}</option>)}
-                </select>
-                {filtroMes&&<button onClick={()=>setFiltroMes("")} style={{padding:"6px 10px",borderRadius:8,border:`1.5px solid ${RM}`,background:"#fff",color:"#aaa",fontSize:11,cursor:"pointer"}}>✕</button>}
-              </div>
-            </div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:14,marginBottom:20}}>
-              {[{label:"Pedidos",value:ordFil.length,icon:"🎂",color:ROSA,bg:"#fff0f5"},{label:"Pendentes",value:ordFil.filter(o=>o.status==="pendente").length,icon:"⏳",color:"#e8b86d",bg:"#fdf6e3"},{label:"Prontos",value:ordFil.filter(o=>o.status==="pronto").length,icon:"✅",color:VE,bg:"#eaf5f1"},{label:"Recebido",value:fmt(recebido),icon:"💰",color:VE,bg:"#eaf5f1"},{label:"A Receber",value:fmt(aReceber),icon:"⚠️",color:RE,bg:RC}].map((c,i)=>(<div key={i} style={{background:c.bg,borderRadius:16,padding:"18px 16px",borderLeft:`4px solid ${c.color}`}}><div style={{fontSize:22}}>{c.icon}</div><div style={{fontSize:20,fontWeight:"bold",color:c.color,marginTop:4}}>{c.value}</div><div style={{fontSize:11,color:"#aaa",marginTop:2}}>{c.label}</div></div>))}
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(175px,1fr))",gap:14,marginBottom:24}}>
+              {[{label:"Em Aberto",value:totalPendentes,icon:"⏳",color:"#e8b86d",bg:"#fdf6e3"},{label:"Prontos",value:totalProntos,icon:"✅",color:VE,bg:"#eaf5f1"},{label:"Recebido",value:fmt(totalRecebido),icon:"💰",color:VE,bg:"#eaf5f1"},{label:"A Receber",value:fmt(totalAReceber),icon:"⚠️",color:RE,bg:RC},{label:"Total",value:orders.length,icon:"🎂",color:ROSA,bg:"#fff0f5"}].map((c,i)=>(
+                <div key={i} style={{background:c.bg,borderRadius:16,padding:"18px 16px",borderLeft:`4px solid ${c.color}`,boxShadow:"0 2px 8px rgba(180,48,74,.07)"}}><div style={{fontSize:22}}>{c.icon}</div><div style={{fontSize:20,fontWeight:"bold",color:c.color,marginTop:4}}>{c.value}</div><div style={{fontSize:11,color:"#aaa",marginTop:2}}>{c.label}</div></div>
+              ))}
             </div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18,marginBottom:18}}>
-              <div style={{background:"#fff",borderRadius:18,padding:20,boxShadow:"0 2px 14px rgba(180,48,74,.07)"}}><h3 style={{margin:"0 0 14px",fontSize:14,color:RE}}>🏆 Mais Pedidos</h3><ResponsiveContainer width="100%" height={200}><BarChart data={prodData} layout="vertical" margin={{left:0,right:16}}><XAxis type="number" tick={{fontSize:10}}/><YAxis type="category" dataKey="name" tick={{fontSize:9}} width={150}/><Tooltip formatter={v=>[`${v} pedido(s)`]}/><Bar dataKey="qty" radius={[0,8,8,0]}>{prodData.map((_,i)=><Cell key={i} fill={PAL[i%PAL.length]}/>)}</Bar></BarChart></ResponsiveContainer></div>
-              <div style={{background:"#fff",borderRadius:18,padding:20,boxShadow:"0 2px 14px rgba(180,48,74,.07)"}}><h3 style={{margin:"0 0 14px",fontSize:14,color:RE}}>💵 Receita por Produto</h3><ResponsiveContainer width="100%" height={200}><BarChart data={valData} layout="vertical" margin={{left:0,right:16}}><XAxis type="number" tick={{fontSize:10}} tickFormatter={v=>`R${v}`}/><YAxis type="category" dataKey="name" tick={{fontSize:9}} width={150}/><Tooltip formatter={v=>[fmt(v)]}/><Bar dataKey="total" radius={[0,8,8,0]}>{valData.map((_,i)=><Cell key={i} fill={PAL[i%PAL.length]}/>)}</Bar></BarChart></ResponsiveContainer></div>
-              <div style={{background:"#fff",borderRadius:18,padding:20,boxShadow:"0 2px 14px rgba(180,48,74,.07)"}}><h3 style={{margin:"0 0 14px",fontSize:14,color:RE}}>📌 Status</h3>{stData.length>0?<ResponsiveContainer width="100%" height={200}><PieChart><Pie data={stData} cx="50%" cy="50%" innerRadius={50} outerRadius={85} paddingAngle={4} dataKey="value" label={({name,value})=>`${name}: ${value}`} labelLine={false}>{stData.map((d,i)=><Cell key={i} fill={d.color}/>)}</Pie><Tooltip/></PieChart></ResponsiveContainer>:<div style={{color:"#ccc",fontSize:13,paddingTop:20}}>Sem dados</div>}</div>
-              <div style={{background:"#fff",borderRadius:18,padding:20,boxShadow:"0 2px 14px rgba(180,48,74,.07)"}}><h3 style={{margin:"0 0 14px",fontSize:14,color:RE}}>📈 Faturamento por Mês</h3><ResponsiveContainer width="100%" height={200}><BarChart data={fatData}><CartesianGrid strokeDasharray="3 3" stroke="#fce4ec"/><XAxis dataKey="mes" tick={{fontSize:11}}/><YAxis tick={{fontSize:11}} tickFormatter={v=>`R${v}`}/><Tooltip formatter={(v,n)=>[fmt(v),n==="recebido"?"Recebido":"A Receber"]}/><Legend formatter={v=>v==="recebido"?"Recebido":"A Receber"}/><Bar dataKey="recebido" fill={VE} radius={[6,6,0,0]}/><Bar dataKey="aReceber" fill={AM} radius={[6,6,0,0]}/></BarChart></ResponsiveContainer></div>
+              {[
+                {t:"🏆 Produtos Mais Pedidos",c:<ResponsiveContainer width="100%" height={200}><BarChart data={prodData} layout="vertical" margin={{left:0,right:16}}><XAxis type="number" tick={{fontSize:10}}/><YAxis type="category" dataKey="name" tick={{fontSize:9}} width={150}/><Tooltip formatter={v=>[`${v} pedido(s)`]}/><Bar dataKey="qty" radius={[0,8,8,0]}>{prodData.map((_,i)=><Cell key={i} fill={PAL[i%PAL.length]}/>)}</Bar></BarChart></ResponsiveContainer>},
+                {t:"📌 Status",c:<ResponsiveContainer width="100%" height={200}><PieChart><Pie data={stData} cx="50%" cy="50%" innerRadius={50} outerRadius={85} paddingAngle={4} dataKey="value" label={({name,value})=>`${name}: ${value}`} labelLine={false}>{stData.map((d,i)=><Cell key={i} fill={d.color}/>)}</Pie><Tooltip/></PieChart></ResponsiveContainer>},
+                {t:"📈 Faturamento por Mês",c:<ResponsiveContainer width="100%" height={200}><BarChart data={fatData}><CartesianGrid strokeDasharray="3 3" stroke="#fce4ec"/><XAxis dataKey="mes" tick={{fontSize:11}}/><YAxis tick={{fontSize:11}} tickFormatter={v=>`R$${v}`}/><Tooltip formatter={(v,n)=>[fmt(v),n==="recebido"?"Recebido":"A Receber"]}/><Legend formatter={v=>v==="recebido"?"Recebido":"A Receber"}/><Bar dataKey="recebido" fill={VE} radius={[6,6,0,0]}/><Bar dataKey="aReceber" fill={AM} radius={[6,6,0,0]}/></BarChart></ResponsiveContainer>},
+                {t:"💵 Receita por Produto",c:<ResponsiveContainer width="100%" height={200}><BarChart data={valData} layout="vertical" margin={{left:0,right:16}}><XAxis type="number" tick={{fontSize:10}} tickFormatter={v=>`R$${v}`}/><YAxis type="category" dataKey="name" tick={{fontSize:9}} width={150}/><Tooltip formatter={v=>[fmt(v)]}/><Bar dataKey="total" radius={[0,8,8,0]}>{valData.map((_,i)=><Cell key={i} fill={PAL[i%PAL.length]}/>)}</Bar></BarChart></ResponsiveContainer>},
+              ].map((c,i)=>(<div key={i} style={{background:"#fff",borderRadius:18,padding:20,boxShadow:"0 2px 14px rgba(180,48,74,.07)"}}><h3 style={{margin:"0 0 14px",fontSize:14,color:RE}}>{c.t}</h3>{c.c}</div>))}
             </div>
-            <div style={{background:"#fff",borderRadius:18,padding:20}}><h3 style={{margin:"0 0 14px",fontSize:14,color:RE}}>📅 Próximas Entregas</h3>{orders.filter(o=>o.status!=="entregue"&&o.data_retirada).sort((a,b)=>a.data_retirada>b.data_retirada?1:-1).slice(0,8).map(o=>{const prazo=getPrazo(getDias(o.data_retirada,agora),o.status);const bp=getBadge(o);return(<div key={o.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:"1px solid #fce4ec",flexWrap:"wrap"}}><span style={{fontSize:18}}>{ST[o.status]?.icon}</span><div style={{flex:1}}><div style={{fontWeight:700,fontSize:13}}>{o.cliente}</div><div style={{fontSize:11,color:"#aaa"}}>{o.itens}</div></div><div style={{fontSize:12,color:RE,fontWeight:700}}>{new Date(o.data_retirada+"T12:00").toLocaleDateString("pt-BR")}</div>{prazo&&<span style={{padding:"2px 8px",borderRadius:20,fontSize:11,fontWeight:700,background:prazo.bg,color:prazo.color}}>{prazo.icon} {prazo.label}</span>}<span style={{padding:"2px 8px",borderRadius:20,fontSize:11,fontWeight:700,background:bp.bg,color:bp.color}}>{bp.text}</span></div>);})}</div>
+            <div style={{background:"#fff",borderRadius:18,padding:20,boxShadow:"0 2px 14px rgba(180,48,74,.07)"}}>
+              <h3 style={{margin:"0 0 14px",fontSize:14,color:RE}}>📅 Próximas Entregas</h3>
+              {orders.filter(o=>o.status!=="entregue"&&o.data_retirada).sort((a,b)=>a.data_retirada>b.data_retirada?1:-1).slice(0,6).length===0?<div style={{color:"#ccc",fontSize:13}}>Nenhuma agendada</div>:orders.filter(o=>o.status!=="entregue"&&o.data_retirada).sort((a,b)=>a.data_retirada>b.data_retirada?1:-1).slice(0,6).map(o=>{const prazo=getPrazo(getDias(o.data_retirada,agora),o.status);const bp=getBadge(o);return(<div key={o.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:"1px solid #fce4ec",flexWrap:"wrap"}}><span style={{fontSize:18}}>{ST[o.status]?.icon}</span><div style={{flex:1}}><div style={{fontWeight:700,fontSize:13}}>{o.cliente}</div><div style={{fontSize:11,color:"#aaa"}}>{o.itens}</div></div><div style={{fontSize:12,color:RE,fontWeight:700}}>{new Date(o.data_retirada+"T12:00").toLocaleDateString("pt-BR")}</div>{prazo&&<span style={{padding:"2px 8px",borderRadius:20,fontSize:11,fontWeight:700,background:prazo.bg,color:prazo.color}}>{prazo.icon} {prazo.label}</span>}<span style={{padding:"2px 8px",borderRadius:20,fontSize:11,fontWeight:700,background:bp.bg,color:bp.color}}>{bp.text}</span></div>);})}
+            </div>
           </>
         )}
 
         {view==="cardapio"&&(
           <>
-            <h2 style={{margin:"0 0 16px",fontSize:20,color:RE}}>🍫 Cardápio Páscoa 2026</h2>
-            {Array.from(new Set(cardapio.map(p=>p.cat))).map(cat=>(<div key={cat} style={{background:"#fff",borderRadius:16,marginBottom:14,overflow:"hidden"}}><div style={{background:`linear-gradient(135deg,${RE},${ROSA})`,padding:"11px 18px"}}><span style={{color:"#fff",fontWeight:700,fontSize:14}}>{cat}</span></div>{cardapio.filter(p=>p.cat===cat).map((p,i,arr)=>(<div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"11px 18px",borderBottom:i<arr.length-1?"1px solid #fce4ec":"none",gap:12}}><div style={{flex:1}}><div style={{fontSize:13,fontWeight:600}}>{p.nome}</div>{p.obs&&<div style={{fontSize:11,color:"#aaa"}}>{p.obs}</div>}</div><span style={{fontSize:15,fontWeight:700,color:RE}}>{fmt(p.preco)}</span></div>))}</div>))}
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,flexWrap:"wrap",gap:12}}>
+              <div><h2 style={{margin:0,fontSize:20,color:RE}}>🍫 Tabela de Páscoa 2026</h2><p style={{margin:"4px 0 0",fontSize:12,color:"#aaa"}}>Trabalhamos apenas com chocolate Nobre</p></div>
+              <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{cats.map(c=><button key={c} onClick={()=>setCatFiltro(c)} style={{padding:"5px 12px",borderRadius:20,border:"2px solid",borderColor:catFiltro===c?RE:"#f0dde4",background:catFiltro===c?RE:"#fff",color:catFiltro===c?"#fff":"#888",fontSize:11,fontWeight:700,cursor:"pointer"}}>{c}</button>)}</div>
+            </div>
+            {cats.filter(c=>c!=="Todas"&&(catFiltro==="Todas"||catFiltro===c)).map(cat=>{
+              const items=cardapio.filter(p=>p.cat===cat);
+              return(<div key={cat} style={{background:"#fff",borderRadius:16,marginBottom:14,overflow:"hidden",boxShadow:"0 2px 12px rgba(180,48,74,.07)"}}><div style={{background:`linear-gradient(135deg,${RE},${ROSA})`,padding:"11px 18px"}}><span style={{color:"#fff",fontWeight:700,fontSize:14}}>{cat}</span></div>{items.map((p,i)=>(<div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"11px 18px",borderBottom:i<items.length-1?"1px solid #fce4ec":"none",gap:12}}><div style={{flex:1}}><div style={{fontSize:13,fontWeight:600}}>{p.nome}</div>{p.obs&&<div style={{fontSize:11,color:"#aaa",marginTop:1}}>{p.obs}</div>}</div><span style={{fontSize:15,fontWeight:700,color:RE}}>{fmt(p.preco)}</span></div>))}</div>);
+            })}
+          </>
+        )}
+
+        {view==="pedidos"&&(
+          <>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:12}}>
+              <h2 style={{margin:0,fontSize:20,color:RE}}>📋 Pedidos</h2>
+              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                <button onClick={()=>setShowFiltros(v=>!v)} style={{padding:"9px 14px",borderRadius:22,border:`2px solid ${filtrosAtivos?RE:RM}`,background:filtrosAtivos?RC:"#fff",color:filtrosAtivos?RE:"#aaa",fontSize:12,fontWeight:700,cursor:"pointer"}}>🔍 Filtros{filtrosAtivos?" ●":""}</button>
+                <button onClick={()=>setView("whatsapp")} style={{padding:"9px 14px",borderRadius:22,border:"2px solid #25d366",background:"#f0fdf4",color:"#25d366",fontSize:12,fontWeight:700,cursor:"pointer"}}>💬 WhatsApp</button>
+                <button onClick={()=>setForm({})} style={{padding:"9px 20px",borderRadius:22,border:"none",background:`linear-gradient(135deg,${RE},${ROSA})`,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",boxShadow:"0 3px 12px rgba(180,48,74,.3)"}}>+ Novo Pedido</button>
+              </div>
+            </div>
+            {showFiltros&&(
+              <div style={{background:"#fff",borderRadius:16,padding:18,marginBottom:16,border:`1.5px solid ${RM}`}}>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(190px,1fr))",gap:12}}>
+                  <div><label style={{fontSize:10,color:"#aaa",display:"block",marginBottom:4,textTransform:"uppercase",letterSpacing:1}}>📅 Mês</label><select value={filtroMes} onChange={e=>setFiltroMes(e.target.value)} style={{width:"100%",padding:"8px 10px",borderRadius:10,border:`1.5px solid ${RM}`,fontSize:12,outline:"none",background:"#fdf4f6"}}><option value="">Todos os meses</option>{mesesDisp.map(m=><option key={m} value={m}>{new Date(m+"-01").toLocaleDateString("pt-BR",{month:"long",year:"numeric"})}</option>)}</select></div>
+                  <div><label style={{fontSize:10,color:"#aaa",display:"block",marginBottom:4,textTransform:"uppercase",letterSpacing:1}}>💵 Valor Mín</label><input type="number" value={filtroValMin} onChange={e=>setFiltroValMin(e.target.value)} placeholder="Ex: 50" style={{width:"100%",padding:"8px 10px",borderRadius:10,border:`1.5px solid ${RM}`,fontSize:12,outline:"none",boxSizing:"border-box",background:"#fdf4f6"}}/></div>
+                  <div><label style={{fontSize:10,color:"#aaa",display:"block",marginBottom:4,textTransform:"uppercase",letterSpacing:1}}>💵 Valor Máx</label><input type="number" value={filtroValMax} onChange={e=>setFiltroValMax(e.target.value)} placeholder="Ex: 300" style={{width:"100%",padding:"8px 10px",borderRadius:10,border:`1.5px solid ${RM}`,fontSize:12,outline:"none",boxSizing:"border-box",background:"#fdf4f6"}}/></div>
+                  <div><label style={{fontSize:10,color:"#aaa",display:"block",marginBottom:4,textTransform:"uppercase",letterSpacing:1}}>💳 Pagamento</label><div style={{display:"flex",gap:5}}>{[["todos","Todos"],["pago","✅"],["nao_pago","⏳"]].map(([k,l])=>(<button key={k} onClick={()=>setFiltroPago(k)} style={{flex:1,padding:"7px 4px",borderRadius:10,border:"1.5px solid",borderColor:filtroPago===k?RE:RM,background:filtroPago===k?RC:"#fff",color:filtroPago===k?RE:"#aaa",fontSize:11,fontWeight:700,cursor:"pointer"}}>{l}</button>))}</div></div>
+                </div>
+                {filtrosAtivos&&(<div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${RC}`,display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>{[{l:`${resumoF.total} pedidos`,i:"🎂",c:RE,b:RC},{l:`Rec: ${fmt(resumoF.recebido)}`,i:"💰",c:VE,b:"#eaf5f1"},{l:`A rec: ${fmt(resumoF.aReceber)}`,i:"⚠️",c:AM,b:"#fff8ec"},{l:`Total: ${fmt(resumoF.totalValor)}`,i:"📈",c:"#555",b:"#f5f5f5"}].map((x,i)=>(<div key={i} style={{padding:"6px 12px",borderRadius:10,background:x.b,color:x.c,fontSize:12,fontWeight:700,display:"flex",alignItems:"center",gap:4}}><span>{x.i}</span><span>{x.l}</span></div>))}<button onClick={()=>{setFiltroMes("");setFiltroValMin("");setFiltroValMax("");setFiltroPago("todos");}} style={{marginLeft:"auto",padding:"6px 12px",borderRadius:20,border:`1.5px solid ${RM}`,background:"#fff",color:"#aaa",fontSize:11,cursor:"pointer"}}>🗑️ Limpar</button></div>)}
+              </div>
+            )}
+            <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap",alignItems:"center"}}>
+              {[["todos","Todos"],...Object.entries(ST).map(([k,v])=>[k,`${v.icon} ${v.label}`])].map(([k,l])=>(<button key={k} onClick={()=>setFilter(k)} style={{padding:"6px 13px",borderRadius:20,border:"2px solid",borderColor:filter===k?RE:"#f0dde4",background:filter===k?RE:"#fff",color:filter===k?"#fff":"#888",fontSize:12,fontWeight:700,cursor:"pointer"}}>{l}</button>))}
+              <span style={{fontSize:12,color:"#aaa"}}>{lista.length} pedido(s)</span>
+            </div>
+            {lista.length===0?(<div style={{textAlign:"center",padding:"60px 0",color:"#ccc"}}><div style={{fontSize:52}}>🥚</div><div style={{marginTop:10,fontSize:15}}>Nenhum pedido ainda</div><button onClick={()=>setForm({})} style={{marginTop:14,padding:"9px 22px",borderRadius:22,border:"none",background:`linear-gradient(135deg,${RE},${ROSA})`,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>+ Criar primeiro pedido</button></div>):(
+              <div style={{display:"grid",gap:12}}>
+                <div style={{background:"#fff",borderRadius:12,padding:"10px 16px",border:`1.5px solid ${RM}`,display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+                  <span style={{fontSize:13}}>📌</span><span style={{fontSize:12,color:"#888"}}>Fila ordenada por urgência de entrega</span>
+                  <div style={{display:"flex",gap:6,flexWrap:"wrap",marginLeft:"auto"}}>{[{c:"#e05555",b:"#fff0f0",l:"Atrasado"},{c:"#e07020",b:"#fff5e0",l:"Hoje"},{c:AM,b:"#fffbe6",l:"Amanhã"},{c:ROSA,b:RC,l:"Em breve"}].map((x,i)=>(<span key={i} style={{padding:"2px 8px",borderRadius:20,fontSize:10,fontWeight:700,background:x.b,color:x.c}}>{x.l}</span>))}</div>
+                </div>
+                {lista.map(o=>(<PedidoCard key={o.id} o={o} idx={naoEnt.indexOf(o)} agora={agora} onStatus={updSt} onPagto={(tipo,val)=>updPag(o.id,tipo,val)} onEdit={setForm} onDelete={delOrder}/>))}
+              </div>
+            )}
           </>
         )}
       </main>
 
       {form!==null&&<FormModal initial={form} onSave={saveOrder} onClose={()=>setForm(null)} cardapio={cardapio}/>}
       {toast&&<div style={{position:"fixed",bottom:24,right:24,padding:"12px 20px",borderRadius:12,background:toast.type==="err"?"#e07070":RE,color:"#fff",fontSize:14,fontWeight:700,boxShadow:"0 4px 20px rgba(0,0,0,.15)",zIndex:999}}>{toast.msg}</div>}
-    </div>
-  );
-}
-
-ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
-</script>
-</body>
-</html>
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Celina's Cake 🎂</title>
-<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<script src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
-<script src="https://unpkg.com/recharts@2.8.0/umd/Recharts.js"></script>
-<style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:Georgia,serif;background:#fdf4f6;}</style>
-</head>
-<body>
-<div id="root"></div>
-<script type="text/babel">
-
-const SHEETS_URL = "https://script.google.com/macros/s/AKfycbw4GvYZL8QOmzzJi3eD6pIstqkbFC8q5HJCFytK2T-V565yNvpAtM2hNA0N5Xx1r9yKdQ/exec";
-const ANTHROPIC_KEY = ""; // ← Cole aqui sua chave da Anthropic (começa com sk-ant-)
-
-const ROSA="#d4607a",ROSA_ESCURO="#b5304a",ROSA_CLARO="#fce4ec",ROSA_MED="#f8bbd0",VERDE="#4a9b7f",AMARELO="#e8a020";
-const LOGO="https://static.ifood-static.com.br/image/upload/t_thumbnail/logosgde/118fefb7-ed84-42c0-af19-c3c81521be3d/202009252306_A4Vw_i.jpg";
-
-const STATUS={
-  pendente:{label:"Pendente",icon:"⏳",color:"#e8b86d",bg:"#fdf6e3"},
-  em_producao:{label:"Em Produção",icon:"👩‍🍳",color:ROSA,bg:ROSA_CLARO},
-  pronto:{label:"Pronto",icon:"✅",color:VERDE,bg:"#eaf5f1"},
-  entregue:{label:"Entregue",icon:"🎁",color:"#888",bg:"#f5f5f5"},
-};
-
-const CARDAPIO=[
-  {cat:"Tradicional",nome:"Ovo Tradicional Ao Leite 250g",preco:55},
-  {cat:"Tradicional",nome:"Ovo Tradicional Branco 250g",preco:62},
-  {cat:"Tradicional",nome:"Ovo Tradicional Misto 250g",preco:62},
-  {cat:"Tradicional",nome:"Ovo Tradicional Ao Leite 500g",preco:100},
-  {cat:"Tradicional",nome:"Ovo Tradicional Branco 500g",preco:115},
-  {cat:"Tradicional",nome:"Ovo Tradicional Misto 500g",preco:115},
-  {cat:"Tradicional",nome:"Ovo Tradicional Ao Leite 800g",preco:150},
-  {cat:"Tradicional",nome:"Ovo Tradicional Branco 800g",preco:170},
-  {cat:"Tradicional",nome:"Ovo Tradicional Misto 800g",preco:170},
-  {cat:"Clássicos",nome:"Ovo Clássico Ao Leite 250g",preco:70,obs:"Prestígio, Trufado, Maracujá ou Limão"},
-  {cat:"Clássicos",nome:"Ovo Clássico Branco 250g",preco:78,obs:"Prestígio, Trufado, Maracujá ou Limão"},
-  {cat:"Clássicos",nome:"Ovo Clássico Ao Leite 500g",preco:120,obs:"Prestígio, Trufado, Maracujá ou Limão"},
-  {cat:"Clássicos",nome:"Ovo Clássico Branco 500g",preco:135,obs:"Prestígio, Trufado, Maracujá ou Limão"},
-  {cat:"Clássicos",nome:"Ovo Clássico Ao Leite 800g",preco:180,obs:"Prestígio, Trufado, Maracujá ou Limão"},
-  {cat:"Clássicos",nome:"Ovo Clássico Branco 800g",preco:205,obs:"Prestígio, Trufado, Maracujá ou Limão"},
-  {cat:"Coração",nome:"Ovo Coração Ao Leite 400g",preco:90},
-  {cat:"Coração",nome:"Ovo Coração Branco 400g",preco:110},
-  {cat:"Coração",nome:"Ovo Coração Ao Leite 800g",preco:140},
-  {cat:"Coração",nome:"Ovo Coração Branco 800g",preco:160},
-  {cat:"Ovo de Colher",nome:"Ovo de Colher Ao Leite 500g",preco:85},
-  {cat:"Ovo de Colher",nome:"Ovo de Colher Branco 500g",preco:85},
-  {cat:"Zero Açúcar",nome:"Ovo Zero Açúcar Ao Leite 250g",preco:105},
-  {cat:"Lembrancinhas",nome:"Ovo Frito 60g",preco:22},
-  {cat:"Lembrancinhas",nome:"Ovo Tablet Recheado 120g",preco:30},
-  {cat:"Ovo Fatia",nome:"Ovo Fatia 700g (6 fatias)",preco:200,obs:"Caramelo, Pistache, Morango, Kinder, Ferrero, Rafaello"},
-  {cat:"Linha Kids",nome:"Ovo Colorê 150g",preco:55},
-  {cat:"Linha Kids",nome:"Kit Mão na Massa 150g",preco:55},
-  {cat:"Linha Kids",nome:"Kit Confeiteiro Kids 150g",preco:65},
-  {cat:"Brigadeiros Gourmet",nome:"Brigadeiro Limão Siciliano (cento)",preco:240},
-  {cat:"Brigadeiros Gourmet",nome:"Brigadeiro Churros (cento)",preco:240},
-  {cat:"Brigadeiros Gourmet",nome:"Brigadeiro Ninho com Nutella (cento)",preco:240},
-  {cat:"Brigadeiros Gourmet",nome:"Brigadeiro Ferrero Rocher (cento)",preco:240},
-  {cat:"Brigadeiros Gourmet",nome:"Brigadeiro Pistache (cento)",preco:350},
-  {cat:"Brigadeiros Tradicionais",nome:"Brigadeiro Ao Leite (cento)",preco:140},
-  {cat:"Brigadeiros Tradicionais",nome:"Brigadeiro Ninho (cento)",preco:140},
-  {cat:"Brigadeiros Tradicionais",nome:"Brigadeiro Beijinho (cento)",preco:140},
-  {cat:"Doces Finos",nome:"Brownie (unidade)",preco:12},
-  {cat:"Doces Finos",nome:"Bem Casado (unidade)",preco:4.90},
-  {cat:"Doces Finos",nome:"Trufinha (unidade)",preco:3.50},
-];
-
-const fmt=v=>`R$ ${Number(v).toFixed(2).replace(".",",")}`;
-const getDias=(dr,agora)=>{if(!dr)return null;const hoje=new Date(agora.toDateString());const ret=new Date(dr+"T00:00:00");return Math.ceil((ret-hoje)/86400000);};
-const getPrazo=(dias,status)=>{if(status==="entregue"||dias===null)return null;if(dias<0)return{label:`${Math.abs(dias)}d atrasado`,color:"#e05555",bg:"#fff0f0",icon:"🚨"};if(dias===0)return{label:"Hoje!",color:"#e07020",bg:"#fff5e0",icon:"⚡"};if(dias===1)return{label:"Amanhã",color:AMARELO,bg:"#fffbe6",icon:"⏰"};if(dias<=3)return{label:`${dias}d`,color:ROSA,bg:ROSA_CLARO,icon:"📅"};return{label:`${dias}d`,color:"#888",bg:"#f5f5f5",icon:"📅"};};
-const getBadge=o=>({bg:o.pago?"#eaf5f1":o.pagoParcial?"#fff8ec":"#fff5e0",color:o.pago?VERDE:o.pagoParcial?AMARELO:"#e8a020",text:o.pago?"💰 Pago":o.pagoParcial?`💛 Entrada ${fmt(o.entrada||0)}`:"⏳ A pagar"});
-
-async function apiLoad(){
-  try{const r=await fetch(`${SHEETS_URL}?action=load`);const d=await r.json();if(d.ok&&d.orders?.length>0)return d.orders;}catch(e){console.error(e);}return[];
-}
-async function apiSave(orders){
-  try{const p=new URLSearchParams();p.append("action","save");p.append("orders",JSON.stringify(orders));await fetch(SHEETS_URL,{method:"POST",body:p});}catch(e){console.error(e);}
-}
-
-const {useState,useEffect,useMemo}=React;
-const {BarChart,Bar,XAxis,YAxis,Tooltip,ResponsiveContainer,PieChart,Pie,Cell}=Recharts;
-
-function WaBubble({msg,side}){
-  return(
-    <div style={{display:"flex",justifyContent:side==="right"?"flex-end":"flex-start",marginBottom:6}}>
-      <div style={{maxWidth:"78%",padding:"9px 14px",borderRadius:side==="right"?"18px 4px 18px 18px":"4px 18px 18px 18px",background:side==="right"?"#dcf8c6":"#fff",boxShadow:"0 1px 4px rgba(0,0,0,0.1)",fontSize:13,lineHeight:1.5,color:"#222",whiteSpace:"pre-wrap",wordBreak:"break-word"}}>{msg}</div>
-    </div>
-  );
-}
-
-function WhatsAppPage({onSaveOrder}){
-  const[msgs,setMsgs]=useState([{side:"left",text:"Oi!! Quero fazer um pedido 😊"},{side:"right",text:"Olá! Bem-vinda à Celina's Cake 🎂🌸\nQual seria o seu pedido?"}]);
-  const[input,setInput]=useState("");
-  const[loading,setLoading]=useState(false);
-  const[preview,setPreview]=useState(null);
-  const[semChave,setSemChave]=useState(false);
-
-  const send=async()=>{
-    if(!input.trim()||loading)return;
-    if(!ANTHROPIC_KEY){setSemChave(true);return;}
-    const txt=input.trim();setInput("");setMsgs(m=>[...m,{side:"left",text:txt}]);setLoading(true);setPreview(null);
-    try{
-      const hoje=new Date().toISOString().split("T")[0];
-      const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":ANTHROPIC_KEY,"anthropic-version":"2023-06-01"},body:JSON.stringify({model:"claude-3-haiku-20240307",max_tokens:800,system:`Atendente Celina's Cake. Retorne SOMENTE JSON:\n{"cliente":string|null,"telefone":string|null,"itens":string,"valor":number|null,"data_retirada":"YYYY-MM-DD"|null,"tipo_entrega":"retirada"|"entrega","endereco":string|null,"observacoes":string|null}\nHoje:${hoje}`,messages:[{role:"user",content:txt}]})});
-      const data=await res.json();
-      const p=JSON.parse(data.content.map(i=>i.text||"").join("").replace(/```json|```/g,"").trim());
-      setPreview(p);
-      const nome=p.cliente?`, ${p.cliente.split(" ")[0]}`:"";
-      const dt=p.data_retirada?new Date(p.data_retirada+"T12:00").toLocaleDateString("pt-BR"):null;
-      let r=`Anotado${nome}! 📝\n\n🥚 *${p.itens}*`;
-      if(p.valor)r+=`\n💰 ${fmt(p.valor)}`;
-      if(dt)r+=`\n📅 ${p.tipo_entrega==="entrega"?"Entrega":"Retirada"}: ${dt}`;
-      if(p.observacoes)r+=`\n📝 ${p.observacoes}`;
-      r+=`\n\nConfirmo? ✅`;
-      setMsgs(m=>[...m,{side:"right",text:r}]);
-    }catch(e){setMsgs(m=>[...m,{side:"right",text:"Hmm, não entendi 😅 Pode detalhar?"}]);}
-    setLoading(false);
-  };
-
-  const confirmar=()=>{
-    if(!preview)return;
-    onSaveOrder({...preview,valor:preview.valor||0});
-    setMsgs(m=>[...m,{side:"left",text:"Sim! ✅"},{side:"right",text:"Confirmado! 🎉🎂 Obrigada! 💕"}]);
-    setPreview(null);
-  };
-
-  return(
-    <div style={{maxWidth:500,margin:"0 auto"}}>
-      <h2 style={{margin:"0 0 6px",fontSize:18,color:ROSA_ESCURO}}>💬 Pedido via WhatsApp</h2>
-      <p style={{margin:"0 0 16px",fontSize:13,color:"#aaa"}}>Cole a mensagem do cliente. A IA interpreta e cria o pedido.</p>
-      {semChave&&(
-        <div style={{background:"#fff8ec",border:`1.5px solid ${AMARELO}`,borderRadius:12,padding:16,marginBottom:16}}>
-          <div style={{fontWeight:700,color:AMARELO,marginBottom:6}}>⚠️ Chave da API não configurada</div>
-          <div style={{fontSize:12,color:"#666"}}>Para usar o WhatsApp com IA, abra o arquivo <code>index.html</code> no GitHub e preencha a variável <code>ANTHROPIC_KEY</code> com sua chave da Anthropic (começa com <code>sk-ant-</code>).</div>
-        </div>
-      )}
-      <div style={{borderRadius:18,overflow:"hidden",boxShadow:"0 6px 32px rgba(180,48,74,0.15)"}}>
-        <div style={{background:"#075e54",padding:"12px 16px",display:"flex",alignItems:"center",gap:12}}>
-          <div style={{width:38,height:38,borderRadius:"50%",overflow:"hidden",border:"2px solid rgba(255,255,255,0.4)"}}>
-            <img src={LOGO} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-          </div>
-          <div>
-            <div style={{color:"#fff",fontWeight:700,fontSize:14}}>Celina's Cake 🎂</div>
-            <div style={{color:"rgba(255,255,255,0.6)",fontSize:11}}>📱 11 95875-1655</div>
-          </div>
-        </div>
-        <div style={{background:"#ece5dd",padding:"16px 12px",minHeight:300,maxHeight:380,overflowY:"auto",display:"flex",flexDirection:"column",justifyContent:"flex-end"}}>
-          {msgs.map((m,i)=><WaBubble key={i} msg={m.text} side={m.side}/>)}
-          {loading&&<div style={{display:"flex",justifyContent:"flex-end"}}><div style={{background:"#dcf8c6",borderRadius:"18px 4px 18px 18px",padding:"10px 16px",fontSize:13,color:"#888"}}>digitando...</div></div>}
-        </div>
-        <div style={{background:"#f0f0f0",padding:"10px 12px",display:"flex",gap:8,alignItems:"flex-end"}}>
-          <textarea value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send();}}} placeholder="Cole a mensagem do cliente..." rows={2}
-            style={{flex:1,borderRadius:22,border:"none",padding:"10px 16px",fontSize:13,resize:"none",outline:"none",background:"#fff"}}/>
-          <button onClick={send} disabled={loading||!input.trim()} style={{width:44,height:44,borderRadius:"50%",border:"none",background:loading||!input.trim()?"#ccc":"#25d366",color:"#fff",fontSize:20,cursor:loading||!input.trim()?"not-allowed":"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>➤</button>
-        </div>
-      </div>
-      {preview&&(
-        <div style={{marginTop:20,background:"#fff",borderRadius:16,padding:22,border:`2px solid ${ROSA}`}}>
-          <h3 style={{margin:"0 0 14px",color:ROSA_ESCURO,fontSize:15}}>📋 Pedido interpretado:</h3>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-            {[["👤",preview.cliente||"—"],["📞",preview.telefone||"—"],["🥚",preview.itens||"—"],["💰",preview.valor?fmt(preview.valor):"—"],["📅",preview.data_retirada?new Date(preview.data_retirada+"T12:00").toLocaleDateString("pt-BR"):"—"],["🚚",preview.tipo_entrega==="entrega"?"Entrega":"Retirada"]].map(([k,v])=>(
-              <div key={k} style={{background:ROSA_CLARO,borderRadius:10,padding:"10px 12px"}}>
-                <div style={{fontSize:10,color:"#aaa",marginBottom:2}}>{k}</div>
-                <div style={{fontWeight:700,fontSize:13}}>{v}</div>
-              </div>
-            ))}
-          </div>
-          <div style={{display:"flex",gap:10,marginTop:16}}>
-            <button onClick={confirmar} style={{flex:1,padding:13,borderRadius:12,border:"none",background:`linear-gradient(135deg,${VERDE},#7abf9e)`,color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer"}}>✅ Confirmar e Salvar</button>
-            <button onClick={()=>setPreview(null)} style={{padding:"13px 18px",borderRadius:12,border:`1.5px solid #f0dde4`,background:"#fff",color:"#aaa",fontSize:14,cursor:"pointer"}}>✏️</button>
-          </div>
-        </div>
-      )}
-      <div style={{marginTop:16,background:"#fff8f4",borderRadius:14,padding:16,border:"1px solid #f0dde4"}}>
-        <div style={{fontSize:11,color:"#aaa",marginBottom:8,textTransform:"uppercase",letterSpacing:1}}>💡 Exemplos</div>
-        {["Oi! Quero 2 ovos tradicionais ao leite 250g pra retirar dia 15/04. Sou a Maria.","Bom dia! Me chamo Ana, quero um Ovo Fatia e Ovo Coração Branco 400g pra sábado."].map((ex,i)=>(
-          <div key={i} onClick={()=>setInput(ex)} style={{padding:"8px 12px",borderRadius:10,background:"#fff",border:"1px solid #f0dde4",fontSize:12,color:"#555",cursor:"pointer",marginBottom:6,lineHeight:1.5}}>"{ex}"</div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function PagamentoBtn({order,onUpdate}){
-  const[modo,setModo]=useState(null);
-  const[entrada,setEntrada]=useState(order.entrada||"");
-  if(modo==="parcial")return(
-    <div style={{background:"#fff8ec",borderRadius:10,padding:"10px 12px",border:"1.5px solid "+AMARELO}}>
-      <div style={{fontSize:11,color:"#aaa",marginBottom:6}}>💵 Valor de entrada (R$)</div>
-      <div style={{display:"flex",gap:6,alignItems:"center"}}>
-        <input type="number" value={entrada} onChange={e=>setEntrada(e.target.value)} autoFocus style={{flex:1,padding:"7px 10px",borderRadius:8,border:"1.5px solid "+AMARELO,fontSize:13,outline:"none"}}/>
-        <button onClick={()=>{onUpdate("parcial",entrada);setModo(null);}} style={{padding:"7px 12px",borderRadius:8,border:"none",background:AMARELO,color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer"}}>✓</button>
-        <button onClick={()=>setModo(null)} style={{padding:"7px 10px",borderRadius:8,border:"1.5px solid #f0dde4",background:"#fff",color:"#aaa",fontSize:12,cursor:"pointer"}}>✕</button>
-      </div>
-    </div>
-  );
-  return(
-    <div style={{display:"flex",gap:5}}>
-      {[{k:"nao_pago",l:"⏳ A pagar",a:!order.pago&&!order.pagoParcial,c:"#e8b86d"},{k:"parcial",l:"💛 Parcial",a:order.pagoParcial,c:AMARELO},{k:"pago",l:"✅ Pago",a:order.pago,c:VERDE}].map(b=>(
-        <button key={b.k} onClick={()=>b.k==="parcial"?setModo("parcial"):onUpdate(b.k,0)}
-          style={{flex:1,padding:"5px 4px",borderRadius:8,border:"1.5px solid",borderColor:b.a?b.c:"#f0dde4",background:b.a?(b.k==="pago"?"#eaf5f1":b.k==="parcial"?"#fff8ec":"#fdf6e3"):"#fff",color:b.a?b.c:"#bbb",fontSize:10,fontWeight:700,cursor:"pointer"}}>
-          {b.l}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function PedidoCard({o,idx,agora,onStatus,onPagto,onEdit,onDelete}){
-  const st=STATUS[o.status]||STATUS.pendente;
-  const dias=getDias(o.data_retirada,agora);
-  const prazo=getPrazo(dias,o.status);
-  const bp=getBadge(o);
-  return(
-    <div style={{background:"#fff",borderRadius:16,padding:"16px 18px",boxShadow:"0 2px 12px rgba(180,48,74,0.07)",borderLeft:`5px solid ${prazo?.color||st.color}`,display:"flex",gap:14,alignItems:"flex-start",flexWrap:"wrap",marginBottom:12}}>
-      {o.status!=="entregue"&&<div style={{display:"flex",flexDirection:"column",alignItems:"center",minWidth:34,gap:2,paddingTop:2}}><div style={{width:30,height:30,borderRadius:"50%",background:prazo?.color||ROSA_MED,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:13}}>{idx+1}</div><div style={{fontSize:9,color:"#ccc",textTransform:"uppercase"}}>fila</div></div>}
-      <div style={{flex:1,minWidth:180}}>
-        <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:5,flexWrap:"wrap"}}>
-          <span style={{fontSize:16}}>{st.icon}</span>
-          <span style={{fontWeight:700,fontSize:15}}>{o.cliente}</span>
-          <span style={{padding:"2px 7px",borderRadius:20,fontSize:11,fontWeight:700,background:st.bg,color:st.color}}>{st.label}</span>
-          <span style={{padding:"2px 7px",borderRadius:20,fontSize:11,fontWeight:700,background:bp.bg,color:bp.color}}>{bp.text}</span>
-          {prazo&&<span style={{padding:"2px 7px",borderRadius:20,fontSize:11,fontWeight:700,background:prazo.bg,color:prazo.color}}>{prazo.icon} {prazo.label}</span>}
-        </div>
-        <div style={{fontSize:13,color:"#555",marginBottom:3}}>🥚 {o.itens}</div>
-        <div style={{display:"flex",gap:10,fontSize:11,color:"#999",flexWrap:"wrap"}}>
-          {o.telefone&&<span>📞 {o.telefone}</span>}
-          {o.data_retirada&&<span>📅 {new Date(o.data_retirada+"T12:00").toLocaleDateString("pt-BR")}</span>}
-          {o.valor&&<span>💵 {fmt(o.valor)}</span>}
-          {o.endereco&&<span>📍 {o.endereco}</span>}
-        </div>
-        {o.observacoes&&<div style={{marginTop:4,fontSize:11,color:"#bbb",fontStyle:"italic"}}>📝 {o.observacoes}</div>}
-      </div>
-      <div style={{display:"flex",flexDirection:"column",gap:5,minWidth:155}}>
-        <div style={{fontSize:10,color:"#ccc",textTransform:"uppercase",letterSpacing:1}}>Status</div>
-        {Object.entries(STATUS).map(([k,v])=>(
-          <button key={k} onClick={()=>onStatus(o.id,k)} style={{padding:"4px 10px",borderRadius:8,border:"1.5px solid",borderColor:o.status===k?v.color:"#f0dde4",background:o.status===k?v.bg:"#fff",color:o.status===k?v.color:"#bbb",fontSize:11,fontWeight:700,cursor:"pointer",textAlign:"left"}}>{v.icon} {v.label}</button>
-        ))}
-        <div style={{marginTop:4}}>
-          <div style={{fontSize:10,color:"#ccc",textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>Pagamento</div>
-          <PagamentoBtn order={o} onUpdate={onPagto}/>
-        </div>
-        <div style={{display:"flex",gap:5,marginTop:4}}>
-          <button onClick={()=>onEdit(o)} style={{flex:1,padding:"5px 0",borderRadius:8,border:`1.5px solid ${ROSA_MED}`,background:ROSA_CLARO,color:ROSA_ESCURO,fontSize:11,cursor:"pointer"}}>✏️ Editar</button>
-          <button onClick={()=>onDelete(o.id)} style={{flex:1,padding:"5px 0",borderRadius:8,border:"1.5px solid #ffd0cc",background:"#fff5f4",color:"#e07070",fontSize:11,cursor:"pointer"}}>🗑️</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function FormModal({initial,onSave,onClose}){
-  const[f,setF]=useState({cliente:"",telefone:"",data_retirada:"",tipo_entrega:"retirada",endereco:"",observacoes:"",forma_pagamento:"PIX",itens:"",valor:"",...initial});
-  const[sel,setSel]=useState([]);
-  const[busca,setBusca]=useState("");
-  const[cat,setCat]=useState("Todas");
-  const set=(k,v)=>setF(p=>({...p,[k]:v}));
-  const cats=["Todas",...Array.from(new Set(CARDAPIO.map(p=>p.cat)))];
-  const filtros=CARDAPIO.filter(p=>(cat==="Todas"||p.cat===cat)&&p.nome.toLowerCase().includes(busca.toLowerCase()));
-  const toggle=p=>setSel(prev=>prev.find(s=>s.nome===p.nome)?prev.filter(s=>s.nome!==p.nome):[...prev,{...p,qtd:1}]);
-  const setQtd=(nome,q)=>setSel(prev=>prev.map(s=>s.nome===nome?{...s,qtd:Math.max(1,parseInt(q)||1)}:s));
-  const total=sel.reduce((s,p)=>s+p.preco*(p.qtd||1),0);
-  const itensStr=sel.map(p=>p.qtd>1?`${p.qtd}x ${p.nome}`:p.nome).join(" + ");
-  const handleSave=()=>{
-    if(!f.cliente.trim())return alert("Preencha o nome do cliente.");
-    if(sel.length===0&&!f.itens.trim())return alert("Selecione pelo menos um produto.");
-    onSave({...f,itens:sel.length>0?itensStr:f.itens,valor:sel.length>0?total:(parseFloat(f.valor)||0)});
-  };
-  const inp=(label,key,type="text",ph="")=>(
-    <div style={{marginBottom:12}}>
-      <label style={{fontSize:10,color:"#aaa",display:"block",marginBottom:3,textTransform:"uppercase",letterSpacing:1}}>{label}</label>
-      <input type={type} value={f[key]||""} onChange={e=>set(key,e.target.value)} placeholder={ph} style={{width:"100%",padding:"9px 12px",borderRadius:10,border:"1.5px solid #f0dde4",fontSize:13,outline:"none",boxSizing:"border-box"}}/>
-    </div>
-  );
-  return(
-    <div style={{position:"fixed",inset:0,background:"rgba(180,48,74,0.18)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:900,padding:16}}>
-      <div style={{background:"#fff",borderRadius:20,padding:24,width:"100%",maxWidth:520,boxShadow:"0 8px 40px rgba(180,48,74,0.18)",maxHeight:"92vh",overflowY:"auto"}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
-          <h3 style={{margin:0,color:ROSA_ESCURO,fontSize:17}}>{f.id?"✏️ Editar":"✨ Novo Pedido"}</h3>
-          <button onClick={onClose} style={{background:"none",border:"none",fontSize:22,cursor:"pointer",color:"#ccc"}}>×</button>
-        </div>
-        {inp("Cliente *","cliente","text","Nome do cliente")}
-        {inp("Telefone","telefone","tel","(11) 99999-9999")}
-        <div style={{marginBottom:14}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-            <label style={{fontSize:10,color:"#aaa",textTransform:"uppercase",letterSpacing:1}}>🍫 Produtos</label>
-            {sel.length>0&&<span style={{fontSize:11,color:ROSA_ESCURO,fontWeight:700}}>{sel.length} selecionado(s)</span>}
-          </div>
-          <div style={{display:"flex",gap:6,marginBottom:6}}>
-            <input value={busca} onChange={e=>setBusca(e.target.value)} placeholder="🔍 Buscar..." style={{flex:1,padding:"7px 10px",borderRadius:8,border:"1.5px solid #f0dde4",fontSize:12,outline:"none"}}/>
-            <select value={cat} onChange={e=>setCat(e.target.value)} style={{padding:"7px 8px",borderRadius:8,border:"1.5px solid #f0dde4",fontSize:11,outline:"none",color:"#555",maxWidth:130}}>
-              {cats.map(c=><option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
-          <div style={{maxHeight:160,overflowY:"auto",border:"1.5px solid #f0dde4",borderRadius:10,padding:4}}>
-            {filtros.map((p,i)=>{const s=sel.find(x=>x.nome===p.nome);return(
-              <div key={i} onClick={()=>toggle(p)} style={{padding:"7px 10px",borderRadius:8,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,background:s?ROSA_CLARO:"transparent",borderLeft:s?`3px solid ${ROSA_ESCURO}`:"3px solid transparent",marginBottom:2}}>
-                <div style={{flex:1}}><div style={{fontSize:12,fontWeight:s?700:400}}>{p.nome}</div>{p.obs&&<div style={{fontSize:10,color:"#bbb"}}>{p.obs}</div>}</div>
-                <span style={{fontSize:12,fontWeight:700,color:ROSA_ESCURO}}>{fmt(p.preco)}</span>
-                {s&&<span style={{fontSize:14,color:ROSA_ESCURO}}>✓</span>}
-              </div>
-            );})}
-          </div>
-          {sel.length>0&&(
-            <div style={{marginTop:10,background:ROSA_CLARO,borderRadius:12,padding:12}}>
-              {sel.map((p,i)=>(
-                <div key={i} style={{display:"flex",alignItems:"center",gap:8,marginBottom:6,background:"#fff",borderRadius:8,padding:"7px 10px"}}>
-                  <div style={{flex:1,fontSize:12}}>{p.nome}</div>
-                  <div style={{display:"flex",alignItems:"center",gap:4}}>
-                    <button onClick={e=>{e.stopPropagation();setQtd(p.nome,(p.qtd||1)-1);}} style={{width:22,height:22,borderRadius:"50%",border:`1px solid ${ROSA_MED}`,background:"#fff",color:ROSA_ESCURO,fontSize:14,cursor:"pointer"}}>−</button>
-                    <input type="number" min="1" value={p.qtd||1} onClick={e=>e.stopPropagation()} onChange={e=>setQtd(p.nome,e.target.value)} style={{width:36,textAlign:"center",border:`1px solid ${ROSA_MED}`,borderRadius:6,fontSize:12,padding:"2px 4px",outline:"none"}}/>
-                    <button onClick={e=>{e.stopPropagation();setQtd(p.nome,(p.qtd||1)+1);}} style={{width:22,height:22,borderRadius:"50%",border:`1px solid ${ROSA_MED}`,background:ROSA_ESCURO,color:"#fff",fontSize:14,cursor:"pointer"}}>+</button>
-                  </div>
-                  <div style={{fontSize:12,fontWeight:700,color:ROSA_ESCURO,minWidth:64,textAlign:"right"}}>{fmt(p.preco*(p.qtd||1))}</div>
-                  <button onClick={e=>{e.stopPropagation();toggle(p);}} style={{background:"none",border:"none",color:"#e07070",cursor:"pointer",fontSize:14,padding:0}}>✕</button>
-                </div>
-              ))}
-              <div style={{display:"flex",justifyContent:"space-between",paddingTop:10,borderTop:`1.5px solid ${ROSA_MED}`,marginTop:4}}>
-                <span style={{fontSize:12,color:"#888"}}>{sel.reduce((s,p)=>s+(p.qtd||1),0)} item(ns)</span>
-                <span style={{fontSize:16,fontWeight:700,color:ROSA_ESCURO}}>Total: {fmt(total)}</span>
-              </div>
-            </div>
-          )}
-        </div>
-        {sel.length===0&&(
-          <div style={{marginBottom:12}}>
-            <label style={{fontSize:10,color:"#aaa",display:"block",marginBottom:3,textTransform:"uppercase",letterSpacing:1}}>Descreva manualmente</label>
-            <input value={f.itens} onChange={e=>set("itens",e.target.value)} placeholder="Ex: Ovo personalizado..." style={{width:"100%",padding:"9px 12px",borderRadius:10,border:"1.5px solid #f0dde4",fontSize:13,outline:"none",boxSizing:"border-box"}}/>
-          </div>
-        )}
-        <div style={{display:"grid",gridTemplateColumns:sel.length>0?"1fr":"1fr 1fr",gap:10}}>
-          {sel.length===0&&<div>{inp("Valor (R$)","valor","number","0,00")}</div>}
-          <div style={{gridColumn:sel.length>0?"1/-1":"auto"}}>{inp("Data retirada","data_retirada","date")}</div>
-        </div>
-        <div style={{marginBottom:12}}>
-          <label style={{fontSize:10,color:"#aaa",display:"block",marginBottom:4,textTransform:"uppercase",letterSpacing:1}}>Tipo</label>
-          <div style={{display:"flex",gap:8}}>
-            {["retirada","entrega"].map(t=>(
-              <button key={t} onClick={()=>set("tipo_entrega",t)} style={{flex:1,padding:"8px",borderRadius:10,border:"1.5px solid",borderColor:f.tipo_entrega===t?ROSA_ESCURO:"#f0dde4",background:f.tipo_entrega===t?ROSA_CLARO:"#fff",color:f.tipo_entrega===t?ROSA_ESCURO:"#aaa",fontSize:12,fontWeight:700,cursor:"pointer"}}>
-                {t==="retirada"?"🏪 Retirada":"🚚 Entrega"}
-              </button>
-            ))}
-          </div>
-        </div>
-        {f.tipo_entrega==="entrega"&&inp("Endereço","endereco","text","Rua, número, bairro...")}
-        <div style={{marginBottom:12}}>
-          <label style={{fontSize:10,color:"#aaa",display:"block",marginBottom:4,textTransform:"uppercase",letterSpacing:1}}>💳 Pagamento</label>
-          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-            {["PIX","Débito","Crédito","Dinheiro"].map(pg=>(
-              <button key={pg} onClick={()=>set("forma_pagamento",pg)} style={{padding:"6px 14px",borderRadius:20,border:"1.5px solid",borderColor:f.forma_pagamento===pg?ROSA_ESCURO:"#f0dde4",background:f.forma_pagamento===pg?ROSA_CLARO:"#fff",color:f.forma_pagamento===pg?ROSA_ESCURO:"#aaa",fontSize:12,fontWeight:700,cursor:"pointer"}}>{pg}</button>
-            ))}
-          </div>
-        </div>
-        {inp("Observações","observacoes","text","Sabor, personalização...")}
-        <button onClick={handleSave} style={{width:"100%",padding:13,borderRadius:12,border:"none",background:`linear-gradient(135deg,${ROSA_ESCURO},${ROSA})`,color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer",marginTop:4}}>
-          💾 Salvar {sel.length>0&&`— ${fmt(total)}`}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function App(){
-  const[view,setView]=useState("pedidos");
-  const[orders,setOrders]=useState([]);
-  const[form,setForm]=useState(null);
-  const[filter,setFilter]=useState("todos");
-  const[loading,setLoading]=useState(true);
-  const[saving,setSaving]=useState(false);
-  const[toast,setToast]=useState(null);
-  const[agora,setAgora]=useState(new Date());
-  const[nextId,setNextId]=useState(1);
-
-  useEffect(()=>{
-    setInterval(()=>setAgora(new Date()),60000);
-    apiLoad().then(data=>{
-      if(data.length>0){setOrders(data);setNextId(Math.max(...data.map(o=>o.id||0))+1);}
-      setLoading(false);
-    });
-  },[]);
-
-  const showToast=(msg,type="ok")=>{setToast({msg,type});setTimeout(()=>setToast(null),3000);};
-
-  const persist=async(newOrders)=>{setSaving(true);await apiSave(newOrders);setSaving(false);};
-
-  const saveOrder=async(data)=>{
-    let newOrders;
-    if(data.id){newOrders=orders.map(x=>x.id===data.id?{...x,...data}:x);showToast("Pedido atualizado! 💾");}
-    else{const novo={...data,id:nextId,status:"pendente",pago:false,pagoParcial:false,entrada:0};newOrders=[novo,...orders];setNextId(n=>n+1);showToast("Pedido criado! 🎂");}
-    setOrders(newOrders);setForm(null);await persist(newOrders);
-  };
-
-  const deleteOrder=async(id)=>{const n=orders.filter(x=>x.id!==id);setOrders(n);showToast("Removido.","err");await persist(n);};
-  const updStatus=async(id,s)=>{const n=orders.map(x=>x.id===id?{...x,status:s}:x);setOrders(n);await persist(n);};
-  const updPagamento=async(id,tipo,val)=>{const n=orders.map(x=>x.id===id?{...x,pago:tipo==="pago",pagoParcial:tipo==="parcial",entrada:tipo==="parcial"?parseFloat(val)||0:tipo==="pago"?x.valor:0}:x);setOrders(n);await persist(n);};
-
-  const totalRecebido=orders.filter(o=>o.pago).reduce((s,o)=>s+(o.valor||0),0)+orders.filter(o=>o.pagoParcial).reduce((s,o)=>s+(o.entrada||0),0);
-  const totalAReceber=orders.filter(o=>!o.pago&&!o.pagoParcial).reduce((s,o)=>s+(o.valor||0),0)+orders.filter(o=>o.pagoParcial).reduce((s,o)=>s+((o.valor||0)-(o.entrada||0)),0);
-
-  const lista=useMemo(()=>{
-    const base=filter==="todos"?orders:orders.filter(o=>o.status===filter);
-    return[...base].sort((a,b)=>{
-      if(a.status==="entregue"&&b.status!=="entregue")return 1;
-      if(b.status==="entregue"&&a.status!=="entregue")return -1;
-      if(!a.data_retirada)return 1;if(!b.data_retirada)return -1;
-      return a.data_retirada>b.data_retirada?1:-1;
-    });
-  },[orders,filter]);
-
-  const naoEntregues=lista.filter(o=>o.status!=="entregue");
-  const atrasados=orders.filter(o=>o.status!=="entregue"&&getDias(o.data_retirada,agora)<0);
-  const statusData=Object.entries(STATUS).map(([k,v])=>({name:v.label,value:orders.filter(o=>o.status===k).length,color:v.color})).filter(d=>d.value>0);
-
-  if(loading)return(
-    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#fdf4f6",flexDirection:"column",gap:16}}>
-      <div style={{fontSize:48}}>🎂</div>
-      <div style={{fontSize:16,color:ROSA_ESCURO,fontWeight:700}}>Carregando pedidos...</div>
-    </div>
-  );
-
-  return(
-    <div style={{fontFamily:"Georgia,serif",minHeight:"100vh",background:"#fdf4f6",color:"#3a1a22"}}>
-      <header style={{background:`linear-gradient(135deg,${ROSA_ESCURO},${ROSA} 60%,#e89aaa)`,boxShadow:"0 4px 20px rgba(180,48,74,0.25)"}}>
-        <div style={{maxWidth:1080,margin:"0 auto",padding:"14px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
-          <div style={{display:"flex",alignItems:"center",gap:12}}>
-            <div style={{width:48,height:48,borderRadius:12,overflow:"hidden",background:"#fff",padding:3}}>
-              <img src={LOGO} alt="Logo" style={{width:"100%",height:"100%",objectFit:"cover",borderRadius:9}}/>
-            </div>
-            <div>
-              <div style={{fontSize:20,fontWeight:"bold",fontStyle:"italic",color:"#fff",letterSpacing:1}}>Celina's Cake</div>
-              <div style={{fontSize:9,letterSpacing:3,color:"rgba(255,255,255,0.6)",textTransform:"uppercase"}}>🐣 Páscoa 2026 · {saving?"💾 salvando...":"✓ salvo"}</div>
-            </div>
-          </div>
-          <nav style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-            {[["pedidos","📋 Pedidos"],["whatsapp","💬 WhatsApp"],["dashboard","📊 Painel"],["cardapio","🍫 Cardápio"]].map(([v,l])=>(
-              <button key={v} onClick={()=>setView(v)} style={{padding:"7px 15px",borderRadius:20,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,background:view===v?"#fff":"rgba(255,255,255,0.2)",color:view===v?ROSA_ESCURO:"#fff"}}>{l}</button>
-            ))}
-          </nav>
-        </div>
-      </header>
-
-      <main style={{maxWidth:1080,margin:"0 auto",padding:"24px 20px"}}>
-        {atrasados.length>0&&(
-          <div style={{background:"#fff0f0",border:"2px solid #e05555",borderRadius:16,padding:"14px 18px",marginBottom:20}}>
-            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}><span style={{fontSize:22}}>🚨</span><div style={{fontWeight:700,color:"#e05555",fontSize:15}}>{atrasados.length} pedido(s) atrasado(s)!</div></div>
-            {atrasados.map(o=>(
-              <div key={o.id} style={{background:"#fff",borderRadius:10,padding:"10px 14px",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",borderLeft:"4px solid #e05555",marginBottom:6}}>
-                <div style={{flex:1}}><span style={{fontWeight:700,fontSize:13}}>{o.cliente}</span><span style={{fontSize:12,color:"#aaa",marginLeft:8}}>{o.itens}</span></div>
-                <span style={{fontSize:11,color:"#e05555",fontWeight:700}}>{Math.abs(getDias(o.data_retirada,agora))}d atrasado</span>
-                <button onClick={()=>updStatus(o.id,"entregue")} style={{padding:"4px 10px",borderRadius:8,border:"none",background:"#e05555",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer"}}>Marcar entregue</button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {view==="whatsapp"&&<WhatsAppPage onSaveOrder={saveOrder}/>}
-
-        {view==="pedidos"&&(
-          <>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:12}}>
-              <h2 style={{margin:0,fontSize:20,color:ROSA_ESCURO}}>📋 Pedidos ({orders.length})</h2>
-              <div style={{display:"flex",gap:8}}>
-                <button onClick={()=>setView("whatsapp")} style={{padding:"9px 14px",borderRadius:22,border:"2px solid #25d366",background:"#f0fdf4",color:"#25d366",fontSize:12,fontWeight:700,cursor:"pointer"}}>💬 WhatsApp</button>
-                <button onClick={()=>setForm({})} style={{padding:"9px 20px",borderRadius:22,border:"none",background:`linear-gradient(135deg,${ROSA_ESCURO},${ROSA})`,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>+ Novo Pedido</button>
-              </div>
-            </div>
-            <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap"}}>
-              {[["todos","Todos"],...Object.entries(STATUS).map(([k,v])=>[k,`${v.icon} ${v.label}`])].map(([k,l])=>(
-                <button key={k} onClick={()=>setFilter(k)} style={{padding:"6px 13px",borderRadius:20,border:"2px solid",borderColor:filter===k?ROSA_ESCURO:"#f0dde4",background:filter===k?ROSA_ESCURO:"#fff",color:filter===k?"#fff":"#888",fontSize:12,fontWeight:700,cursor:"pointer"}}>{l}</button>
-              ))}
-            </div>
-            {lista.length===0?(
-              <div style={{textAlign:"center",padding:"60px 0",color:"#ccc"}}>
-                <div style={{fontSize:52}}>🥚</div>
-                <div style={{marginTop:10,fontSize:15}}>Nenhum pedido ainda</div>
-                <button onClick={()=>setForm({})} style={{marginTop:14,padding:"9px 22px",borderRadius:22,border:"none",background:`linear-gradient(135deg,${ROSA_ESCURO},${ROSA})`,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>+ Criar primeiro pedido</button>
-              </div>
-            ):lista.map(o=>(
-              <PedidoCard key={o.id} o={o} idx={naoEntregues.indexOf(o)} agora={agora}
-                onStatus={updStatus} onPagto={(tipo,val)=>updPagamento(o.id,tipo,val)}
-                onEdit={setForm} onDelete={deleteOrder}/>
-            ))}
-          </>
-        )}
-
-        {view==="dashboard"&&(
-          <>
-            <h2 style={{margin:"0 0 16px",fontSize:20,color:ROSA_ESCURO}}>📊 Painel</h2>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:14,marginBottom:24}}>
-              {[{label:"Total",value:orders.length,icon:"🎂",color:ROSA,bg:"#fff0f5"},{label:"Pendentes",value:orders.filter(o=>o.status==="pendente").length,icon:"⏳",color:"#e8b86d",bg:"#fdf6e3"},{label:"Prontos",value:orders.filter(o=>o.status==="pronto").length,icon:"✅",color:VERDE,bg:"#eaf5f1"},{label:"Recebido",value:fmt(totalRecebido),icon:"💰",color:VERDE,bg:"#eaf5f1"},{label:"A Receber",value:fmt(totalAReceber),icon:"⚠️",color:ROSA_ESCURO,bg:ROSA_CLARO}].map((c,i)=>(
-                <div key={i} style={{background:c.bg,borderRadius:16,padding:"18px 16px",borderLeft:`4px solid ${c.color}`}}>
-                  <div style={{fontSize:22}}>{c.icon}</div>
-                  <div style={{fontSize:20,fontWeight:"bold",color:c.color,marginTop:4}}>{c.value}</div>
-                  <div style={{fontSize:11,color:"#aaa",marginTop:2}}>{c.label}</div>
-                </div>
-              ))}
-            </div>
-            {statusData.length>0&&(
-              <div style={{background:"#fff",borderRadius:18,padding:20,marginBottom:18}}>
-                <h3 style={{margin:"0 0 14px",fontSize:14,color:ROSA_ESCURO}}>📌 Status dos Pedidos</h3>
-                <ResponsiveContainer width="100%" height={200}>
-                  <PieChart><Pie data={statusData} cx="50%" cy="50%" innerRadius={50} outerRadius={85} paddingAngle={4} dataKey="value" label={({name,value})=>`${name}: ${value}`} labelLine={false}>{statusData.map((d,i)=><Cell key={i} fill={d.color}/>)}</Pie><Tooltip/></PieChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-            <div style={{background:"#fff",borderRadius:18,padding:20}}>
-              <h3 style={{margin:"0 0 14px",fontSize:14,color:ROSA_ESCURO}}>📅 Próximas Entregas</h3>
-              {orders.filter(o=>o.status!=="entregue"&&o.data_retirada).sort((a,b)=>a.data_retirada>b.data_retirada?1:-1).slice(0,8).map(o=>{
-                const prazo=getPrazo(getDias(o.data_retirada,agora),o.status);const bp=getBadge(o);
-                return(
-                  <div key={o.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:"1px solid #fce4ec",flexWrap:"wrap"}}>
-                    <span style={{fontSize:18}}>{STATUS[o.status]?.icon}</span>
-                    <div style={{flex:1}}><div style={{fontWeight:700,fontSize:13}}>{o.cliente}</div><div style={{fontSize:11,color:"#aaa"}}>{o.itens}</div></div>
-                    <div style={{fontSize:12,color:ROSA_ESCURO,fontWeight:700}}>{new Date(o.data_retirada+"T12:00").toLocaleDateString("pt-BR")}</div>
-                    {prazo&&<span style={{padding:"2px 8px",borderRadius:20,fontSize:11,fontWeight:700,background:prazo.bg,color:prazo.color}}>{prazo.icon} {prazo.label}</span>}
-                    <span style={{padding:"2px 8px",borderRadius:20,fontSize:11,fontWeight:700,background:bp.bg,color:bp.color}}>{bp.text}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </>
-        )}
-
-        {view==="cardapio"&&(
-          <>
-            <h2 style={{margin:"0 0 16px",fontSize:20,color:ROSA_ESCURO}}>🍫 Cardápio Páscoa 2026</h2>
-            {Array.from(new Set(CARDAPIO.map(p=>p.cat))).map(cat=>(
-              <div key={cat} style={{background:"#fff",borderRadius:16,marginBottom:14,overflow:"hidden"}}>
-                <div style={{background:`linear-gradient(135deg,${ROSA_ESCURO},${ROSA})`,padding:"11px 18px"}}><span style={{color:"#fff",fontWeight:700,fontSize:14}}>{cat}</span></div>
-                {CARDAPIO.filter(p=>p.cat===cat).map((p,i,arr)=>(
-                  <div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"11px 18px",borderBottom:i<arr.length-1?"1px solid #fce4ec":"none",gap:12}}>
-                    <div style={{flex:1}}><div style={{fontSize:13,fontWeight:600}}>{p.nome}</div>{p.obs&&<div style={{fontSize:11,color:"#aaa"}}>{p.obs}</div>}</div>
-                    <span style={{fontSize:15,fontWeight:700,color:ROSA_ESCURO}}>{fmt(p.preco)}</span>
-                  </div>
-                ))}
-              </div>
-            ))}
-          </>
-        )}
-      </main>
-
-      {form!==null&&<FormModal initial={form} onSave={saveOrder} onClose={()=>setForm(null)}/>}
-      {toast&&<div style={{position:"fixed",bottom:24,right:24,padding:"12px 20px",borderRadius:12,background:toast.type==="err"?"#e07070":ROSA_ESCURO,color:"#fff",fontSize:14,fontWeight:700,boxShadow:"0 4px 20px rgba(0,0,0,0.15)",zIndex:999}}>{toast.msg}</div>}
-    </div>
-  );
-}
-
-ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
-</script>
-</body>
-</html>
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Celina's Cake 🎂</title>
-<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<script src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
-<script src="https://unpkg.com/recharts@2.8.0/umd/Recharts.js"></script>
-<style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:Georgia,serif;background:#fdf4f6;}</style>
-</head>
-<body>
-<div id="root"></div>
-<script type="text/babel">
-
-const SHEETS_URL = "https://script.google.com/macros/s/AKfycbw4GvYZL8QOmzzJi3eD6pIstqkbFC8q5HJCFytK2T-V565yNvpAtM2hNA0N5Xx1r9yKdQ/exec";
-
-const ROSA="#d4607a",ROSA_ESCURO="#b5304a",ROSA_CLARO="#fce4ec",ROSA_MED="#f8bbd0",VERDE="#4a9b7f",AMARELO="#e8a020";
-const LOGO="https://static.ifood-static.com.br/image/upload/t_thumbnail/logosgde/118fefb7-ed84-42c0-af19-c3c81521be3d/202009252306_A4Vw_i.jpg";
-const PALETTE=[ROSA_ESCURO,ROSA,"#e89aaa",VERDE,AMARELO,"#7abf9e","#f5c6a0","#9b59b6"];
-
-const STATUS={
-  pendente:{label:"Pendente",icon:"⏳",color:"#e8b86d",bg:"#fdf6e3"},
-  em_producao:{label:"Em Produção",icon:"👩‍🍳",color:ROSA,bg:ROSA_CLARO},
-  pronto:{label:"Pronto",icon:"✅",color:VERDE,bg:"#eaf5f1"},
-  entregue:{label:"Entregue",icon:"🎁",color:"#888",bg:"#f5f5f5"},
-};
-
-const CARDAPIO=[
-  {cat:"Tradicional",nome:"Ovo Tradicional Ao Leite 250g",preco:55},
-  {cat:"Tradicional",nome:"Ovo Tradicional Branco 250g",preco:62},
-  {cat:"Tradicional",nome:"Ovo Tradicional Misto 250g",preco:62},
-  {cat:"Tradicional",nome:"Ovo Tradicional Ao Leite 500g",preco:100},
-  {cat:"Tradicional",nome:"Ovo Tradicional Branco 500g",preco:115},
-  {cat:"Tradicional",nome:"Ovo Tradicional Misto 500g",preco:115},
-  {cat:"Tradicional",nome:"Ovo Tradicional Ao Leite 800g",preco:150},
-  {cat:"Tradicional",nome:"Ovo Tradicional Branco 800g",preco:170},
-  {cat:"Tradicional",nome:"Ovo Tradicional Misto 800g",preco:170},
-  {cat:"Clássicos",nome:"Ovo Clássico Ao Leite 250g",preco:70,obs:"Prestígio, Trufado, Maracujá ou Limão"},
-  {cat:"Clássicos",nome:"Ovo Clássico Branco 250g",preco:78,obs:"Prestígio, Trufado, Maracujá ou Limão"},
-  {cat:"Clássicos",nome:"Ovo Clássico Ao Leite 500g",preco:120,obs:"Prestígio, Trufado, Maracujá ou Limão"},
-  {cat:"Clássicos",nome:"Ovo Clássico Branco 500g",preco:135,obs:"Prestígio, Trufado, Maracujá ou Limão"},
-  {cat:"Clássicos",nome:"Ovo Clássico Ao Leite 800g",preco:180,obs:"Prestígio, Trufado, Maracujá ou Limão"},
-  {cat:"Clássicos",nome:"Ovo Clássico Branco 800g",preco:205,obs:"Prestígio, Trufado, Maracujá ou Limão"},
-  {cat:"Coração",nome:"Ovo Coração Ao Leite 400g",preco:90},
-  {cat:"Coração",nome:"Ovo Coração Branco 400g",preco:110},
-  {cat:"Coração",nome:"Ovo Coração Ao Leite 800g",preco:140},
-  {cat:"Coração",nome:"Ovo Coração Branco 800g",preco:160},
-  {cat:"Ovo de Colher",nome:"Ovo de Colher Ao Leite 500g",preco:85},
-  {cat:"Ovo de Colher",nome:"Ovo de Colher Branco 500g",preco:85},
-  {cat:"Zero Açúcar",nome:"Ovo Zero Açúcar Ao Leite 250g",preco:105},
-  {cat:"Lembrancinhas",nome:"Ovo Frito 60g",preco:22},
-  {cat:"Lembrancinhas",nome:"Ovo Tablet Recheado 120g",preco:30},
-  {cat:"Ovo Fatia",nome:"Ovo Fatia 700g (6 fatias)",preco:200,obs:"Caramelo, Pistache, Morango, Kinder, Ferrero, Rafaello"},
-  {cat:"Linha Kids",nome:"Ovo Colorê 150g",preco:55},
-  {cat:"Linha Kids",nome:"Kit Mão na Massa 150g",preco:55},
-  {cat:"Linha Kids",nome:"Kit Confeiteiro Kids 150g",preco:65},
-  {cat:"Brigadeiros Gourmet",nome:"Brigadeiro Limão Siciliano (cento)",preco:240},
-  {cat:"Brigadeiros Gourmet",nome:"Brigadeiro Churros (cento)",preco:240},
-  {cat:"Brigadeiros Gourmet",nome:"Brigadeiro Ninho com Nutella (cento)",preco:240},
-  {cat:"Brigadeiros Gourmet",nome:"Brigadeiro Ferrero Rocher (cento)",preco:240},
-  {cat:"Brigadeiros Gourmet",nome:"Brigadeiro Pistache (cento)",preco:350},
-  {cat:"Brigadeiros Tradicionais",nome:"Brigadeiro Ao Leite (cento)",preco:140},
-  {cat:"Brigadeiros Tradicionais",nome:"Brigadeiro Ninho (cento)",preco:140},
-  {cat:"Brigadeiros Tradicionais",nome:"Brigadeiro Beijinho (cento)",preco:140},
-  {cat:"Doces Finos",nome:"Brownie (unidade)",preco:12},
-  {cat:"Doces Finos",nome:"Bem Casado (unidade)",preco:4.90},
-  {cat:"Doces Finos",nome:"Trufinha (unidade)",preco:3.50},
-];
-
-const fmt=v=>`R$ ${Number(v).toFixed(2).replace(".",",")}`;
-const getDias=(dr,agora)=>{if(!dr)return null;const hoje=new Date(agora.toDateString());const ret=new Date(dr+"T00:00:00");return Math.ceil((ret-hoje)/86400000);};
-const getPrazo=(dias,status)=>{if(status==="entregue"||dias===null)return null;if(dias<0)return{label:`${Math.abs(dias)}d atrasado`,color:"#e05555",bg:"#fff0f0",icon:"🚨"};if(dias===0)return{label:"Hoje!",color:"#e07020",bg:"#fff5e0",icon:"⚡"};if(dias===1)return{label:"Amanhã",color:AMARELO,bg:"#fffbe6",icon:"⏰"};if(dias<=3)return{label:`${dias}d`,color:ROSA,bg:ROSA_CLARO,icon:"📅"};return{label:`${dias}d`,color:"#888",bg:"#f5f5f5",icon:"📅"};};
-const getBadge=o=>({bg:o.pago?"#eaf5f1":o.pagoParcial?"#fff8ec":"#fff5e0",color:o.pago?VERDE:o.pagoParcial?AMARELO:"#e8a020",text:o.pago?"💰 Pago":o.pagoParcial?`💛 Entrada ${fmt(o.entrada||0)}`:"⏳ A pagar"});
-
-async function apiLoad(){
-  try{
-    const r=await fetch(`${SHEETS_URL}?action=load`);
-    const d=await r.json();
-    if(d.ok&&d.orders?.length>0)return d.orders;
-  }catch(e){console.error(e);}
-  return[];
-}
-
-async function apiSave(orders){
-  try{
-    const params=new URLSearchParams();
-    params.append("action","save");
-    params.append("orders",JSON.stringify(orders));
-    await fetch(SHEETS_URL,{method:"POST",body:params});
-  }catch(e){console.error(e);}
-}
-
-const {useState,useEffect,useMemo}=React;
-const {BarChart,Bar,XAxis,YAxis,Tooltip,ResponsiveContainer,CartesianGrid,PieChart,Pie,Cell,Legend}=Recharts;
-
-function PagamentoBtn({order,onUpdate}){
-  const[modo,setModo]=useState(null);
-  const[entrada,setEntrada]=useState(order.entrada||"");
-  if(modo==="parcial")return(
-    <div style={{background:"#fff8ec",borderRadius:10,padding:"10px 12px",border:"1.5px solid "+AMARELO}}>
-      <div style={{fontSize:11,color:"#aaa",marginBottom:6}}>💵 Valor de entrada (R$)</div>
-      <div style={{display:"flex",gap:6,alignItems:"center"}}>
-        <input type="number" value={entrada} onChange={e=>setEntrada(e.target.value)} autoFocus style={{flex:1,padding:"7px 10px",borderRadius:8,border:"1.5px solid "+AMARELO,fontSize:13,outline:"none"}}/>
-        <button onClick={()=>{onUpdate("parcial",entrada);setModo(null);}} style={{padding:"7px 12px",borderRadius:8,border:"none",background:AMARELO,color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer"}}>✓</button>
-        <button onClick={()=>setModo(null)} style={{padding:"7px 10px",borderRadius:8,border:"1.5px solid #f0dde4",background:"#fff",color:"#aaa",fontSize:12,cursor:"pointer"}}>✕</button>
-      </div>
-    </div>
-  );
-  return(
-    <div style={{display:"flex",gap:5}}>
-      {[{k:"nao_pago",l:"⏳ A pagar",a:!order.pago&&!order.pagoParcial,c:"#e8b86d"},{k:"parcial",l:"💛 Parcial",a:order.pagoParcial,c:AMARELO},{k:"pago",l:"✅ Pago",a:order.pago,c:VERDE}].map(b=>(
-        <button key={b.k} onClick={()=>b.k==="parcial"?setModo("parcial"):onUpdate(b.k,0)}
-          style={{flex:1,padding:"5px 4px",borderRadius:8,border:"1.5px solid",borderColor:b.a?b.c:"#f0dde4",background:b.a?(b.k==="pago"?"#eaf5f1":b.k==="parcial"?"#fff8ec":"#fdf6e3"):"#fff",color:b.a?b.c:"#bbb",fontSize:10,fontWeight:700,cursor:"pointer"}}>
-          {b.l}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function PedidoCard({o,idx,agora,onStatus,onPagto,onEdit,onDelete}){
-  const st=STATUS[o.status]||STATUS.pendente;
-  const dias=getDias(o.data_retirada,agora);
-  const prazo=getPrazo(dias,o.status);
-  const bp=getBadge(o);
-  return(
-    <div style={{background:"#fff",borderRadius:16,padding:"16px 18px",boxShadow:"0 2px 12px rgba(180,48,74,0.07)",borderLeft:`5px solid ${prazo?.color||st.color}`,display:"flex",gap:14,alignItems:"flex-start",flexWrap:"wrap",marginBottom:12}}>
-      {o.status!=="entregue"&&<div style={{display:"flex",flexDirection:"column",alignItems:"center",minWidth:34,gap:2,paddingTop:2}}><div style={{width:30,height:30,borderRadius:"50%",background:prazo?.color||ROSA_MED,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:13}}>{idx+1}</div><div style={{fontSize:9,color:"#ccc",textTransform:"uppercase"}}>fila</div></div>}
-      <div style={{flex:1,minWidth:180}}>
-        <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:5,flexWrap:"wrap"}}>
-          <span style={{fontSize:16}}>{st.icon}</span>
-          <span style={{fontWeight:700,fontSize:15}}>{o.cliente}</span>
-          <span style={{padding:"2px 7px",borderRadius:20,fontSize:11,fontWeight:700,background:st.bg,color:st.color}}>{st.label}</span>
-          <span style={{padding:"2px 7px",borderRadius:20,fontSize:11,fontWeight:700,background:bp.bg,color:bp.color}}>{bp.text}</span>
-          {prazo&&<span style={{padding:"2px 7px",borderRadius:20,fontSize:11,fontWeight:700,background:prazo.bg,color:prazo.color}}>{prazo.icon} {prazo.label}</span>}
-        </div>
-        <div style={{fontSize:13,color:"#555",marginBottom:3}}>🥚 {o.itens}</div>
-        <div style={{display:"flex",gap:10,fontSize:11,color:"#999",flexWrap:"wrap"}}>
-          {o.telefone&&<span>📞 {o.telefone}</span>}
-          {o.data_retirada&&<span>📅 {new Date(o.data_retirada+"T12:00").toLocaleDateString("pt-BR")}</span>}
-          {o.valor&&<span>💵 {fmt(o.valor)}</span>}
-          {o.endereco&&<span>📍 {o.endereco}</span>}
-        </div>
-        {o.observacoes&&<div style={{marginTop:4,fontSize:11,color:"#bbb",fontStyle:"italic"}}>📝 {o.observacoes}</div>}
-      </div>
-      <div style={{display:"flex",flexDirection:"column",gap:5,minWidth:155}}>
-        <div style={{fontSize:10,color:"#ccc",textTransform:"uppercase",letterSpacing:1}}>Status</div>
-        {Object.entries(STATUS).map(([k,v])=>(
-          <button key={k} onClick={()=>onStatus(o.id,k)} style={{padding:"4px 10px",borderRadius:8,border:"1.5px solid",borderColor:o.status===k?v.color:"#f0dde4",background:o.status===k?v.bg:"#fff",color:o.status===k?v.color:"#bbb",fontSize:11,fontWeight:700,cursor:"pointer",textAlign:"left"}}>{v.icon} {v.label}</button>
-        ))}
-        <div style={{marginTop:4}}>
-          <div style={{fontSize:10,color:"#ccc",textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>Pagamento</div>
-          <PagamentoBtn order={o} onUpdate={onPagto}/>
-        </div>
-        <div style={{display:"flex",gap:5,marginTop:4}}>
-          <button onClick={()=>onEdit(o)} style={{flex:1,padding:"5px 0",borderRadius:8,border:`1.5px solid ${ROSA_MED}`,background:ROSA_CLARO,color:ROSA_ESCURO,fontSize:11,cursor:"pointer"}}>✏️ Editar</button>
-          <button onClick={()=>onDelete(o.id)} style={{flex:1,padding:"5px 0",borderRadius:8,border:"1.5px solid #ffd0cc",background:"#fff5f4",color:"#e07070",fontSize:11,cursor:"pointer"}}>🗑️</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function FormModal({initial,onSave,onClose}){
-  const[f,setF]=useState({cliente:"",telefone:"",data_retirada:"",tipo_entrega:"retirada",endereco:"",observacoes:"",forma_pagamento:"PIX",itens:"",valor:"",...initial});
-  const[sel,setSel]=useState([]);
-  const[busca,setBusca]=useState("");
-  const[cat,setCat]=useState("Todas");
-  const set=(k,v)=>setF(p=>({...p,[k]:v}));
-  const cats=["Todas",...Array.from(new Set(CARDAPIO.map(p=>p.cat)))];
-  const filtros=CARDAPIO.filter(p=>(cat==="Todas"||p.cat===cat)&&p.nome.toLowerCase().includes(busca.toLowerCase()));
-  const toggle=p=>setSel(prev=>prev.find(s=>s.nome===p.nome)?prev.filter(s=>s.nome!==p.nome):[...prev,{...p,qtd:1}]);
-  const setQtd=(nome,q)=>setSel(prev=>prev.map(s=>s.nome===nome?{...s,qtd:Math.max(1,parseInt(q)||1)}:s));
-  const total=sel.reduce((s,p)=>s+p.preco*(p.qtd||1),0);
-  const itensStr=sel.map(p=>p.qtd>1?`${p.qtd}x ${p.nome}`:p.nome).join(" + ");
-  const handleSave=()=>{
-    if(!f.cliente.trim())return alert("Preencha o nome do cliente.");
-    if(sel.length===0&&!f.itens.trim())return alert("Selecione pelo menos um produto.");
-    onSave({...f,itens:sel.length>0?itensStr:f.itens,valor:sel.length>0?total:(parseFloat(f.valor)||0)});
-  };
-  const inp=(label,key,type="text",ph="")=>(
-    <div style={{marginBottom:12}}>
-      <label style={{fontSize:10,color:"#aaa",display:"block",marginBottom:3,textTransform:"uppercase",letterSpacing:1}}>{label}</label>
-      <input type={type} value={f[key]||""} onChange={e=>set(key,e.target.value)} placeholder={ph} style={{width:"100%",padding:"9px 12px",borderRadius:10,border:"1.5px solid #f0dde4",fontSize:13,outline:"none",boxSizing:"border-box"}}/>
-    </div>
-  );
-  return(
-    <div style={{position:"fixed",inset:0,background:"rgba(180,48,74,0.18)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:900,padding:16}}>
-      <div style={{background:"#fff",borderRadius:20,padding:24,width:"100%",maxWidth:520,boxShadow:"0 8px 40px rgba(180,48,74,0.18)",maxHeight:"92vh",overflowY:"auto"}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
-          <h3 style={{margin:0,color:ROSA_ESCURO,fontSize:17}}>{f.id?"✏️ Editar":"✨ Novo Pedido"}</h3>
-          <button onClick={onClose} style={{background:"none",border:"none",fontSize:22,cursor:"pointer",color:"#ccc"}}>×</button>
-        </div>
-        {inp("Cliente *","cliente","text","Nome do cliente")}
-        {inp("Telefone","telefone","tel","(11) 99999-9999")}
-        <div style={{marginBottom:14}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-            <label style={{fontSize:10,color:"#aaa",textTransform:"uppercase",letterSpacing:1}}>🍫 Produtos</label>
-            {sel.length>0&&<span style={{fontSize:11,color:ROSA_ESCURO,fontWeight:700}}>{sel.length} selecionado(s)</span>}
-          </div>
-          <div style={{display:"flex",gap:6,marginBottom:6}}>
-            <input value={busca} onChange={e=>setBusca(e.target.value)} placeholder="🔍 Buscar..." style={{flex:1,padding:"7px 10px",borderRadius:8,border:"1.5px solid #f0dde4",fontSize:12,outline:"none"}}/>
-            <select value={cat} onChange={e=>setCat(e.target.value)} style={{padding:"7px 8px",borderRadius:8,border:"1.5px solid #f0dde4",fontSize:11,outline:"none",color:"#555",maxWidth:130}}>
-              {cats.map(c=><option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
-          <div style={{maxHeight:160,overflowY:"auto",border:"1.5px solid #f0dde4",borderRadius:10,padding:4}}>
-            {filtros.map((p,i)=>{const s=sel.find(x=>x.nome===p.nome);return(
-              <div key={i} onClick={()=>toggle(p)} style={{padding:"7px 10px",borderRadius:8,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,background:s?ROSA_CLARO:"transparent",borderLeft:s?`3px solid ${ROSA_ESCURO}`:"3px solid transparent",marginBottom:2}}>
-                <div style={{flex:1}}><div style={{fontSize:12,fontWeight:s?700:400}}>{p.nome}</div>{p.obs&&<div style={{fontSize:10,color:"#bbb"}}>{p.obs}</div>}</div>
-                <span style={{fontSize:12,fontWeight:700,color:ROSA_ESCURO}}>{fmt(p.preco)}</span>
-                {s&&<span style={{fontSize:14,color:ROSA_ESCURO}}>✓</span>}
-              </div>
-            );})}
-          </div>
-          {sel.length>0&&(
-            <div style={{marginTop:10,background:ROSA_CLARO,borderRadius:12,padding:12}}>
-              {sel.map((p,i)=>(
-                <div key={i} style={{display:"flex",alignItems:"center",gap:8,marginBottom:6,background:"#fff",borderRadius:8,padding:"7px 10px"}}>
-                  <div style={{flex:1,fontSize:12}}>{p.nome}</div>
-                  <div style={{display:"flex",alignItems:"center",gap:4}}>
-                    <button onClick={e=>{e.stopPropagation();setQtd(p.nome,(p.qtd||1)-1);}} style={{width:22,height:22,borderRadius:"50%",border:`1px solid ${ROSA_MED}`,background:"#fff",color:ROSA_ESCURO,fontSize:14,cursor:"pointer"}}>−</button>
-                    <input type="number" min="1" value={p.qtd||1} onClick={e=>e.stopPropagation()} onChange={e=>setQtd(p.nome,e.target.value)} style={{width:36,textAlign:"center",border:`1px solid ${ROSA_MED}`,borderRadius:6,fontSize:12,padding:"2px 4px",outline:"none"}}/>
-                    <button onClick={e=>{e.stopPropagation();setQtd(p.nome,(p.qtd||1)+1);}} style={{width:22,height:22,borderRadius:"50%",border:`1px solid ${ROSA_MED}`,background:ROSA_ESCURO,color:"#fff",fontSize:14,cursor:"pointer"}}>+</button>
-                  </div>
-                  <div style={{fontSize:12,fontWeight:700,color:ROSA_ESCURO,minWidth:64,textAlign:"right"}}>{fmt(p.preco*(p.qtd||1))}</div>
-                  <button onClick={e=>{e.stopPropagation();toggle(p);}} style={{background:"none",border:"none",color:"#e07070",cursor:"pointer",fontSize:14,padding:0}}>✕</button>
-                </div>
-              ))}
-              <div style={{display:"flex",justifyContent:"space-between",paddingTop:10,borderTop:`1.5px solid ${ROSA_MED}`,marginTop:4}}>
-                <span style={{fontSize:12,color:"#888"}}>{sel.reduce((s,p)=>s+(p.qtd||1),0)} item(ns)</span>
-                <span style={{fontSize:16,fontWeight:700,color:ROSA_ESCURO}}>Total: {fmt(total)}</span>
-              </div>
-            </div>
-          )}
-        </div>
-        {sel.length===0&&(
-          <div style={{marginBottom:12}}>
-            <label style={{fontSize:10,color:"#aaa",display:"block",marginBottom:3,textTransform:"uppercase",letterSpacing:1}}>Descreva manualmente</label>
-            <input value={f.itens} onChange={e=>set("itens",e.target.value)} placeholder="Ex: Ovo personalizado..." style={{width:"100%",padding:"9px 12px",borderRadius:10,border:"1.5px solid #f0dde4",fontSize:13,outline:"none",boxSizing:"border-box"}}/>
-          </div>
-        )}
-        <div style={{display:"grid",gridTemplateColumns:sel.length>0?"1fr":"1fr 1fr",gap:10}}>
-          {sel.length===0&&<div>{inp("Valor (R$)","valor","number","0,00")}</div>}
-          <div style={{gridColumn:sel.length>0?"1/-1":"auto"}}>{inp("Data retirada","data_retirada","date")}</div>
-        </div>
-        <div style={{marginBottom:12}}>
-          <label style={{fontSize:10,color:"#aaa",display:"block",marginBottom:4,textTransform:"uppercase",letterSpacing:1}}>Tipo</label>
-          <div style={{display:"flex",gap:8}}>
-            {["retirada","entrega"].map(t=>(
-              <button key={t} onClick={()=>set("tipo_entrega",t)} style={{flex:1,padding:"8px",borderRadius:10,border:"1.5px solid",borderColor:f.tipo_entrega===t?ROSA_ESCURO:"#f0dde4",background:f.tipo_entrega===t?ROSA_CLARO:"#fff",color:f.tipo_entrega===t?ROSA_ESCURO:"#aaa",fontSize:12,fontWeight:700,cursor:"pointer"}}>
-                {t==="retirada"?"🏪 Retirada":"🚚 Entrega"}
-              </button>
-            ))}
-          </div>
-        </div>
-        {f.tipo_entrega==="entrega"&&inp("Endereço","endereco","text","Rua, número, bairro...")}
-        <div style={{marginBottom:12}}>
-          <label style={{fontSize:10,color:"#aaa",display:"block",marginBottom:4,textTransform:"uppercase",letterSpacing:1}}>💳 Pagamento</label>
-          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-            {["PIX","Débito","Crédito","Dinheiro"].map(pg=>(
-              <button key={pg} onClick={()=>set("forma_pagamento",pg)} style={{padding:"6px 14px",borderRadius:20,border:"1.5px solid",borderColor:f.forma_pagamento===pg?ROSA_ESCURO:"#f0dde4",background:f.forma_pagamento===pg?ROSA_CLARO:"#fff",color:f.forma_pagamento===pg?ROSA_ESCURO:"#aaa",fontSize:12,fontWeight:700,cursor:"pointer"}}>{pg}</button>
-            ))}
-          </div>
-        </div>
-        {inp("Observações","observacoes","text","Sabor, personalização...")}
-        <button onClick={handleSave} style={{width:"100%",padding:13,borderRadius:12,border:"none",background:`linear-gradient(135deg,${ROSA_ESCURO},${ROSA})`,color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer",marginTop:4}}>
-          💾 Salvar {sel.length>0&&`— ${fmt(total)}`}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function App(){
-  const[view,setView]=useState("pedidos");
-  const[orders,setOrders]=useState([]);
-  const[form,setForm]=useState(null);
-  const[filter,setFilter]=useState("todos");
-  const[loading,setLoading]=useState(true);
-  const[saving,setSaving]=useState(false);
-  const[toast,setToast]=useState(null);
-  const[agora,setAgora]=useState(new Date());
-  const[nextId,setNextId]=useState(1);
-
-  useEffect(()=>{
-    setInterval(()=>setAgora(new Date()),60000);
-    apiLoad().then(data=>{
-      if(data.length>0){
-        setOrders(data);
-        setNextId(Math.max(...data.map(o=>o.id||0))+1);
-      }
-      setLoading(false);
-    });
-  },[]);
-
-  const showToast=(msg,type="ok")=>{setToast({msg,type});setTimeout(()=>setToast(null),3000);};
-
-  const persist=async(newOrders)=>{
-    setSaving(true);
-    await apiSave(newOrders);
-    setSaving(false);
-  };
-
-  const saveOrder=async(data)=>{
-    let newOrders;
-    if(data.id){
-      newOrders=orders.map(x=>x.id===data.id?{...x,...data}:x);
-      showToast("Pedido atualizado! 💾");
-    }else{
-      const novo={...data,id:nextId,status:"pendente",pago:false,pagoParcial:false,entrada:0};
-      newOrders=[novo,...orders];
-      setNextId(n=>n+1);
-      showToast("Pedido criado! 🎂");
-    }
-    setOrders(newOrders);
-    setForm(null);
-    await persist(newOrders);
-  };
-
-  const deleteOrder=async(id)=>{
-    const newOrders=orders.filter(x=>x.id!==id);
-    setOrders(newOrders);
-    showToast("Removido.","err");
-    await persist(newOrders);
-  };
-
-  const updStatus=async(id,s)=>{
-    const newOrders=orders.map(x=>x.id===id?{...x,status:s}:x);
-    setOrders(newOrders);
-    await persist(newOrders);
-  };
-
-  const updPagamento=async(id,tipo,val)=>{
-    const newOrders=orders.map(x=>x.id===id?{...x,pago:tipo==="pago",pagoParcial:tipo==="parcial",entrada:tipo==="parcial"?parseFloat(val)||0:tipo==="pago"?x.valor:0}:x);
-    setOrders(newOrders);
-    await persist(newOrders);
-  };
-
-  const totalRecebido=orders.filter(o=>o.pago).reduce((s,o)=>s+(o.valor||0),0)+orders.filter(o=>o.pagoParcial).reduce((s,o)=>s+(o.entrada||0),0);
-  const totalAReceber=orders.filter(o=>!o.pago&&!o.pagoParcial).reduce((s,o)=>s+(o.valor||0),0)+orders.filter(o=>o.pagoParcial).reduce((s,o)=>s+((o.valor||0)-(o.entrada||0)),0);
-
-  const lista=useMemo(()=>{
-    const base=filter==="todos"?orders:orders.filter(o=>o.status===filter);
-    return[...base].sort((a,b)=>{
-      if(a.status==="entregue"&&b.status!=="entregue")return 1;
-      if(b.status==="entregue"&&a.status!=="entregue")return -1;
-      if(!a.data_retirada)return 1;if(!b.data_retirada)return -1;
-      return a.data_retirada>b.data_retirada?1:-1;
-    });
-  },[orders,filter]);
-
-  const naoEntregues=lista.filter(o=>o.status!=="entregue");
-  const atrasados=orders.filter(o=>o.status!=="entregue"&&getDias(o.data_retirada,agora)<0);
-
-  if(loading)return(
-    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#fdf4f6",flexDirection:"column",gap:16}}>
-      <div style={{fontSize:48}}>🎂</div>
-      <div style={{fontSize:16,color:ROSA_ESCURO,fontWeight:700}}>Carregando pedidos...</div>
-    </div>
-  );
-
-  return(
-    <div style={{fontFamily:"Georgia,serif",minHeight:"100vh",background:"#fdf4f6",color:"#3a1a22"}}>
-      <header style={{background:`linear-gradient(135deg,${ROSA_ESCURO},${ROSA} 60%,#e89aaa)`,boxShadow:"0 4px 20px rgba(180,48,74,0.25)"}}>
-        <div style={{maxWidth:1080,margin:"0 auto",padding:"14px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
-          <div style={{display:"flex",alignItems:"center",gap:12}}>
-            <div style={{width:48,height:48,borderRadius:12,overflow:"hidden",background:"#fff",padding:3}}>
-              <img src={LOGO} alt="Logo" style={{width:"100%",height:"100%",objectFit:"cover",borderRadius:9}}/>
-            </div>
-            <div>
-              <div style={{fontSize:20,fontWeight:"bold",fontStyle:"italic",color:"#fff",letterSpacing:1}}>Celina's Cake</div>
-              <div style={{fontSize:9,letterSpacing:3,color:"rgba(255,255,255,0.6)",textTransform:"uppercase"}}>
-                🐣 Páscoa 2026 · {saving?"💾 salvando...":"✓ salvo"}
-              </div>
-            </div>
-          </div>
-          <nav style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-            {[["pedidos","📋 Pedidos"],["dashboard","📊 Painel"],["cardapio","🍫 Cardápio"]].map(([v,l])=>(
-              <button key={v} onClick={()=>setView(v)} style={{padding:"7px 15px",borderRadius:20,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,background:view===v?"#fff":"rgba(255,255,255,0.2)",color:view===v?ROSA_ESCURO:"#fff"}}>{l}</button>
-            ))}
-          </nav>
-        </div>
-      </header>
-
-      <main style={{maxWidth:1080,margin:"0 auto",padding:"24px 20px"}}>
-
-        {atrasados.length>0&&(
-          <div style={{background:"#fff0f0",border:"2px solid #e05555",borderRadius:16,padding:"14px 18px",marginBottom:20}}>
-            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
-              <span style={{fontSize:22}}>🚨</span>
-              <div style={{fontWeight:700,color:"#e05555",fontSize:15}}>{atrasados.length} pedido(s) atrasado(s)!</div>
-            </div>
-            {atrasados.map(o=>(
-              <div key={o.id} style={{background:"#fff",borderRadius:10,padding:"10px 14px",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",borderLeft:"4px solid #e05555",marginBottom:6}}>
-                <div style={{flex:1}}><span style={{fontWeight:700,fontSize:13}}>{o.cliente}</span><span style={{fontSize:12,color:"#aaa",marginLeft:8}}>{o.itens}</span></div>
-                <span style={{fontSize:11,color:"#e05555",fontWeight:700}}>{Math.abs(getDias(o.data_retirada,agora))}d atrasado</span>
-                <button onClick={()=>updStatus(o.id,"entregue")} style={{padding:"4px 10px",borderRadius:8,border:"none",background:"#e05555",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer"}}>Marcar entregue</button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {view==="pedidos"&&(
-          <>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:12}}>
-              <h2 style={{margin:0,fontSize:20,color:ROSA_ESCURO}}>📋 Pedidos ({orders.length})</h2>
-              <button onClick={()=>setForm({})} style={{padding:"9px 20px",borderRadius:22,border:"none",background:`linear-gradient(135deg,${ROSA_ESCURO},${ROSA})`,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>+ Novo Pedido</button>
-            </div>
-            <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap"}}>
-              {[["todos","Todos"],...Object.entries(STATUS).map(([k,v])=>[k,`${v.icon} ${v.label}`])].map(([k,l])=>(
-                <button key={k} onClick={()=>setFilter(k)} style={{padding:"6px 13px",borderRadius:20,border:"2px solid",borderColor:filter===k?ROSA_ESCURO:"#f0dde4",background:filter===k?ROSA_ESCURO:"#fff",color:filter===k?"#fff":"#888",fontSize:12,fontWeight:700,cursor:"pointer"}}>{l}</button>
-              ))}
-            </div>
-            {lista.length===0?(
-              <div style={{textAlign:"center",padding:"60px 0",color:"#ccc"}}>
-                <div style={{fontSize:52}}>🥚</div>
-                <div style={{marginTop:10,fontSize:15}}>Nenhum pedido ainda</div>
-                <button onClick={()=>setForm({})} style={{marginTop:14,padding:"9px 22px",borderRadius:22,border:"none",background:`linear-gradient(135deg,${ROSA_ESCURO},${ROSA})`,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>+ Criar primeiro pedido</button>
-              </div>
-            ):(
-              lista.map(o=>(
-                <PedidoCard key={o.id} o={o} idx={naoEntregues.indexOf(o)} agora={agora}
-                  onStatus={updStatus} onPagto={(tipo,val)=>updPagamento(o.id,tipo,val)}
-                  onEdit={setForm} onDelete={deleteOrder}/>
-              ))
-            )}
-          </>
-        )}
-
-        {view==="dashboard"&&(
-          <>
-            <h2 style={{margin:"0 0 16px",fontSize:20,color:ROSA_ESCURO}}>📊 Painel</h2>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:14,marginBottom:24}}>
-              {[{label:"Total",value:orders.length,icon:"🎂",color:ROSA,bg:"#fff0f5"},{label:"Pendentes",value:orders.filter(o=>o.status==="pendente").length,icon:"⏳",color:"#e8b86d",bg:"#fdf6e3"},{label:"Prontos",value:orders.filter(o=>o.status==="pronto").length,icon:"✅",color:VERDE,bg:"#eaf5f1"},{label:"Recebido",value:fmt(totalRecebido),icon:"💰",color:VERDE,bg:"#eaf5f1"},{label:"A Receber",value:fmt(totalAReceber),icon:"⚠️",color:ROSA_ESCURO,bg:ROSA_CLARO}].map((c,i)=>(
-                <div key={i} style={{background:c.bg,borderRadius:16,padding:"18px 16px",borderLeft:`4px solid ${c.color}`}}>
-                  <div style={{fontSize:22}}>{c.icon}</div>
-                  <div style={{fontSize:20,fontWeight:"bold",color:c.color,marginTop:4}}>{c.value}</div>
-                  <div style={{fontSize:11,color:"#aaa",marginTop:2}}>{c.label}</div>
-                </div>
-              ))}
-            </div>
-            <div style={{background:"#fff",borderRadius:18,padding:20,marginBottom:18}}>
-              <h3 style={{margin:"0 0 14px",fontSize:14,color:ROSA_ESCURO}}>📅 Próximas Entregas</h3>
-              {orders.filter(o=>o.status!=="entregue"&&o.data_retirada).sort((a,b)=>a.data_retirada>b.data_retirada?1:-1).slice(0,8).map(o=>{
-                const prazo=getPrazo(getDias(o.data_retirada,agora),o.status);const bp=getBadge(o);
-                return(
-                  <div key={o.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:"1px solid #fce4ec",flexWrap:"wrap"}}>
-                    <span style={{fontSize:18}}>{STATUS[o.status]?.icon}</span>
-                    <div style={{flex:1}}><div style={{fontWeight:700,fontSize:13}}>{o.cliente}</div><div style={{fontSize:11,color:"#aaa"}}>{o.itens}</div></div>
-                    <div style={{fontSize:12,color:ROSA_ESCURO,fontWeight:700}}>{new Date(o.data_retirada+"T12:00").toLocaleDateString("pt-BR")}</div>
-                    {prazo&&<span style={{padding:"2px 8px",borderRadius:20,fontSize:11,fontWeight:700,background:prazo.bg,color:prazo.color}}>{prazo.icon} {prazo.label}</span>}
-                    <span style={{padding:"2px 8px",borderRadius:20,fontSize:11,fontWeight:700,background:bp.bg,color:bp.color}}>{bp.text}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </>
-        )}
-
-        {view==="cardapio"&&(
-          <>
-            <h2 style={{margin:"0 0 16px",fontSize:20,color:ROSA_ESCURO}}>🍫 Cardápio Páscoa 2026</h2>
-            {Array.from(new Set(CARDAPIO.map(p=>p.cat))).map(cat=>(
-              <div key={cat} style={{background:"#fff",borderRadius:16,marginBottom:14,overflow:"hidden"}}>
-                <div style={{background:`linear-gradient(135deg,${ROSA_ESCURO},${ROSA})`,padding:"11px 18px"}}><span style={{color:"#fff",fontWeight:700,fontSize:14}}>{cat}</span></div>
-                {CARDAPIO.filter(p=>p.cat===cat).map((p,i,arr)=>(
-                  <div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"11px 18px",borderBottom:i<arr.length-1?"1px solid #fce4ec":"none",gap:12}}>
-                    <div style={{flex:1}}><div style={{fontSize:13,fontWeight:600}}>{p.nome}</div>{p.obs&&<div style={{fontSize:11,color:"#aaa"}}>{p.obs}</div>}</div>
-                    <span style={{fontSize:15,fontWeight:700,color:ROSA_ESCURO}}>{fmt(p.preco)}</span>
-                  </div>
-                ))}
-              </div>
-            ))}
-          </>
-        )}
-      </main>
-
-      {form!==null&&<FormModal initial={form} onSave={saveOrder} onClose={()=>setForm(null)}/>}
-      {toast&&<div style={{position:"fixed",bottom:24,right:24,padding:"12px 20px",borderRadius:12,background:toast.type==="err"?"#e07070":ROSA_ESCURO,color:"#fff",fontSize:14,fontWeight:700,boxShadow:"0 4px 20px rgba(0,0,0,0.15)",zIndex:999}}>{toast.msg}</div>}
     </div>
   );
 }
