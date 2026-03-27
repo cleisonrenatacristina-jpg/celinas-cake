@@ -111,7 +111,114 @@ async function apiSave(orders){
 const {useState,useEffect,useMemo}=React;
 const {BarChart,Bar,XAxis,YAxis,Tooltip,ResponsiveContainer,CartesianGrid,PieChart,Pie,Cell,Legend}=Recharts;
 
-// ── WHATSAPP ──────────────────────────────────────────────────
+// ── LOGIN ─────────────────────────────────────────────────────
+const USUARIOS_KEY = "celinas-usuarios-v1";
+
+function getUsuarios() {
+  try { const s = localStorage.getItem(USUARIOS_KEY); return s ? JSON.parse(s) : [{user:"admin",pass:"celinas2026"}]; }
+  catch { return [{user:"admin",pass:"celinas2026"}]; }
+}
+function saveUsuarios(u) { try { localStorage.setItem(USUARIOS_KEY, JSON.stringify(u)); } catch {} }
+
+function LoginPage({onLogin}) {
+  const[user,setUser]=useState("");
+  const[pass,setPass]=useState("");
+  const[erro,setErro]=useState("");
+  const[show,setShow]=useState(false);
+
+  const tentar=()=>{
+    const usuarios=getUsuarios();
+    const ok=usuarios.find(u=>u.user===user.trim()&&u.pass===pass);
+    if(ok){onLogin(user.trim());}
+    else{setErro("Usuário ou senha incorretos!");setTimeout(()=>setErro(""),3000);}
+  };
+
+  if(loading)return(<div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#fdf4f6",flexDirection:"column",gap:16}}><div style={{fontSize:48}}>🎂</div><div style={{fontSize:16,color:RE,fontWeight:700}}>Carregando pedidos...</div><div style={{fontSize:12,color:"#aaa"}}>Buscando dados salvos</div></div>);
+
+  return(
+    <div style={{minHeight:"100vh",background:`linear-gradient(135deg,${RE},${ROSA} 60%,#e89aaa)`,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
+      <div style={{background:"#fff",borderRadius:24,padding:36,width:"100%",maxWidth:380,boxShadow:"0 20px 60px rgba(180,48,74,0.3)"}}>
+        <div style={{textAlign:"center",marginBottom:28}}>
+          <div style={{width:72,height:72,borderRadius:18,overflow:"hidden",background:RC,padding:4,margin:"0 auto 14px",boxShadow:`0 4px 16px rgba(180,48,74,0.2)`}}>
+            <img src={LOGO} style={{width:"100%",height:"100%",objectFit:"cover",borderRadius:14}}/>
+          </div>
+          <div style={{fontSize:24,fontWeight:"bold",fontStyle:"italic",color:RE,letterSpacing:1}}>Celina's Cake</div>
+          <div style={{fontSize:12,color:"#aaa",marginTop:4,letterSpacing:2,textTransform:"uppercase"}}>🔒 Acesso restrito</div>
+        </div>
+        <div style={{marginBottom:14}}>
+          <label style={{fontSize:11,color:"#aaa",display:"block",marginBottom:5,textTransform:"uppercase",letterSpacing:1}}>Usuário</label>
+          <input value={user} onChange={e=>setUser(e.target.value)} onKeyDown={e=>e.key==="Enter"&&tentar()} placeholder="Digite seu usuário" autoFocus
+            style={{width:"100%",padding:"11px 14px",borderRadius:12,border:`1.5px solid ${RM}`,fontSize:14,outline:"none",boxSizing:"border-box"}}/>
+        </div>
+        <div style={{marginBottom:20}}>
+          <label style={{fontSize:11,color:"#aaa",display:"block",marginBottom:5,textTransform:"uppercase",letterSpacing:1}}>Senha</label>
+          <div style={{position:"relative"}}>
+            <input type={show?"text":"password"} value={pass} onChange={e=>setPass(e.target.value)} onKeyDown={e=>e.key==="Enter"&&tentar()} placeholder="Digite sua senha"
+              style={{width:"100%",padding:"11px 40px 11px 14px",borderRadius:12,border:`1.5px solid ${RM}`,fontSize:14,outline:"none",boxSizing:"border-box"}}/>
+            <button onClick={()=>setShow(v=>!v)} style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",fontSize:16,color:"#aaa"}}>{show?"🙈":"👁️"}</button>
+          </div>
+        </div>
+        {erro&&<div style={{background:"#fff0f0",border:"1.5px solid #e05555",borderRadius:10,padding:"10px 14px",fontSize:13,color:"#e05555",marginBottom:14,textAlign:"center"}}>{erro}</div>}
+        <button onClick={tentar} style={{width:"100%",padding:13,borderRadius:12,border:"none",background:`linear-gradient(135deg,${RE},${ROSA})`,color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer",boxShadow:"0 4px 16px rgba(180,48,74,0.3)"}}>
+          🔓 Entrar
+        </button>
+        <div style={{textAlign:"center",marginTop:16,fontSize:11,color:"#ccc"}}>Padrão: admin / celinas2026</div>
+      </div>
+    </div>
+  );
+}
+
+function ConfigUsuarios({onClose}) {
+  const[usuarios,setUsuarios]=useState(getUsuarios);
+  const[novo,setNovo]=useState({user:"",pass:""});
+  const[msg,setMsg]=useState("");
+
+  const adicionar=()=>{
+    if(!novo.user.trim()||!novo.pass.trim())return setMsg("Preencha usuário e senha!");
+    if(usuarios.find(u=>u.user===novo.user.trim()))return setMsg("Usuário já existe!");
+    const n=[...usuarios,{user:novo.user.trim(),pass:novo.pass}];
+    setUsuarios(n);saveUsuarios(n);setNovo({user:"",pass:""});setMsg("✅ Usuário adicionado!");
+    setTimeout(()=>setMsg(""),2000);
+  };
+  const remover=(u)=>{
+    if(usuarios.length===1)return setMsg("Precisa ter pelo menos 1 usuário!");
+    const n=usuarios.filter(x=>x.user!==u);setUsuarios(n);saveUsuarios(n);
+  };
+  const alterarSenha=(u,pass)=>{
+    const n=usuarios.map(x=>x.user===u?{...x,pass}:x);setUsuarios(n);saveUsuarios(n);
+    setMsg("✅ Senha alterada!");setTimeout(()=>setMsg(""),2000);
+  };
+
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(180,48,74,.18)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:950,padding:16}}>
+      <div style={{background:"#fff",borderRadius:20,padding:24,width:"100%",maxWidth:460,boxShadow:"0 8px 40px rgba(180,48,74,.18)",maxHeight:"90vh",overflowY:"auto"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
+          <h3 style={{margin:0,color:RE,fontSize:17}}>👥 Gerenciar Usuários</h3>
+          <button onClick={onClose} style={{background:"none",border:"none",fontSize:22,cursor:"pointer",color:"#ccc"}}>×</button>
+        </div>
+        {msg&&<div style={{background:msg.includes("✅")?"#eaf5f1":"#fff0f0",border:`1.5px solid ${msg.includes("✅")?VE:"#e05555"}`,borderRadius:10,padding:"8px 14px",fontSize:13,color:msg.includes("✅")?VE:"#e05555",marginBottom:14}}>{msg}</div>}
+        <div style={{marginBottom:18}}>
+          {usuarios.map((u,i)=>(
+            <div key={i} style={{background:RC,borderRadius:12,padding:"12px 14px",marginBottom:8,display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+              <span style={{fontWeight:700,fontSize:14,color:RE,minWidth:80}}>👤 {u.user}</span>
+              <input type="password" defaultValue={u.pass} onBlur={e=>alterarSenha(u.user,e.target.value)} placeholder="Nova senha"
+                style={{flex:1,padding:"6px 10px",borderRadius:8,border:`1.5px solid ${RM}`,fontSize:13,outline:"none",minWidth:100}}/>
+              {usuarios.length>1&&<button onClick={()=>remover(u.user)} style={{padding:"5px 10px",borderRadius:8,border:"1.5px solid #ffd0cc",background:"#fff5f4",color:"#e07070",fontSize:11,cursor:"pointer"}}>🗑️</button>}
+            </div>
+          ))}
+        </div>
+        <div style={{borderTop:`1.5px solid ${RC}`,paddingTop:16}}>
+          <div style={{fontSize:12,color:"#aaa",marginBottom:10,fontWeight:700,textTransform:"uppercase",letterSpacing:1}}>➕ Novo Usuário</div>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+            <input value={novo.user} onChange={e=>setNovo(p=>({...p,user:e.target.value}))} placeholder="Usuário" style={{flex:1,padding:"8px 12px",borderRadius:10,border:`1.5px solid ${RM}`,fontSize:13,outline:"none",minWidth:100}}/>
+            <input type="password" value={novo.pass} onChange={e=>setNovo(p=>({...p,pass:e.target.value}))} placeholder="Senha" style={{flex:1,padding:"8px 12px",borderRadius:10,border:`1.5px solid ${RM}`,fontSize:13,outline:"none",minWidth:100}}/>
+            <button onClick={adicionar} style={{padding:"8px 16px",borderRadius:10,border:"none",background:`linear-gradient(135deg,${RE},${ROSA})`,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>Adicionar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 function WaBubble({msg,side,hora}){
   return(
     <div style={{display:"flex",justifyContent:side==="right"?"flex-end":"flex-start",marginBottom:6}}>
@@ -400,6 +507,9 @@ function FormModal({initial,onSave,onClose,cardapio}){
 
 // ── APP PRINCIPAL ─────────────────────────────────────────────
 function App(){
+  const[logado,setLogado]=useState(()=>{try{return !!localStorage.getItem("celinas-logado");}catch{return false;}});
+  const[userAtual,setUserAtual]=useState(()=>{try{return localStorage.getItem("celinas-logado")||"";}catch{return "";}});
+  const[showConfig,setShowConfig]=useState(false);
   const[view,setView]=useState("pedidos");
   const[orders,setOrders]=useState([]);
   const[form,setForm]=useState(null);
@@ -471,7 +581,10 @@ function App(){
   const fatData=useMemo(()=>{const m={};orders.forEach(o=>{const mm=o.data_retirada?o.data_retirada.slice(0,7):"?";if(!m[mm])m[mm]={mes:mm,recebido:0,aReceber:0};o.pago?m[mm].recebido+=(o.valor||0):m[mm].aReceber+=(o.valor||0);});return Object.values(m).sort((a,b)=>a.mes>b.mes?1:-1).map(d=>({...d,mes:d.mes==="?"?"?":new Date(d.mes+"-01").toLocaleDateString("pt-BR",{month:"short",year:"2-digit"})}));},[orders]);
   const cats=["Todas",...Array.from(new Set(cardapio.map(p=>p.cat)))];
 
-  if(loading)return(<div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#fdf4f6",flexDirection:"column",gap:16}}><div style={{fontSize:48}}>🎂</div><div style={{fontSize:16,color:RE,fontWeight:700}}>Carregando pedidos...</div><div style={{fontSize:12,color:"#aaa"}}>Buscando dados salvos</div></div>);
+  const handleLogin=(u)=>{setLogado(true);setUserAtual(u);try{localStorage.setItem("celinas-logado",u);}catch{}};
+  const handleLogout=()=>{setLogado(false);setUserAtual("");try{localStorage.removeItem("celinas-logado");}catch{}};
+
+  if(!logado) return <LoginPage onLogin={handleLogin}/>;
 
   return(
     <div style={{fontFamily:"Georgia,serif",minHeight:"100vh",background:"#fdf4f6",color:"#3a1a22"}}>
@@ -487,11 +600,11 @@ function App(){
               </div>
             </div>
           </div>
-          <nav style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-            {[["dashboard","📊 Painel"],["whatsapp","💬 WhatsApp"],["pedidos","📋 Pedidos"],["cardapio","🍫 Cardápio"],["precos","💲 Preços"]].map(([v,l])=>(
-              <button key={v} onClick={()=>setView(v)} style={{padding:"7px 15px",borderRadius:20,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,background:view===v?"#fff":"rgba(255,255,255,.2)",color:view===v?RE:"#fff"}}>{l}</button>
-            ))}
-          </nav>
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                <span style={{fontSize:11,color:"rgba(255,255,255,.6)"}}>👤 {userAtual}</span>
+                <button onClick={()=>setShowConfig(true)} style={{padding:"5px 10px",borderRadius:10,border:"1.5px solid rgba(255,255,255,.3)",background:"rgba(255,255,255,.1)",color:"#fff",fontSize:11,cursor:"pointer"}}>⚙️ Usuários</button>
+                <button onClick={handleLogout} style={{padding:"5px 10px",borderRadius:10,border:"1.5px solid rgba(255,255,255,.3)",background:"rgba(255,255,255,.1)",color:"#fff",fontSize:11,cursor:"pointer"}}>🔒 Sair</button>
+              </div>
         </div>
       </header>
 
@@ -575,6 +688,7 @@ function App(){
         )}
       </main>
 
+      {showConfig&&<ConfigUsuarios onClose={()=>setShowConfig(false)}/>}
       {form!==null&&<FormModal initial={form} onSave={saveOrder} onClose={()=>setForm(null)} cardapio={cardapio}/>}
       {toast&&<div style={{position:"fixed",bottom:24,right:24,padding:"12px 20px",borderRadius:12,background:toast.type==="err"?"#e07070":RE,color:"#fff",fontSize:14,fontWeight:700,boxShadow:"0 4px 20px rgba(0,0,0,.15)",zIndex:999}}>{toast.msg}</div>}
     </div>
