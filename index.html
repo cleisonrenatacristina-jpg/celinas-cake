@@ -16,7 +16,7 @@
 <script type="text/babel">
 
 // ── CONFIG ────────────────────────────────────────────────────
-const SHEETS_URL = "https://script.google.com/macros/s/AKfycbyUYlfhVoXH-4LSySf7sSbOPji0IvnsRpelTxc7FupSAnof-OIuDuEaV_2UAupAR5WP-A/exec";
+const SHEETS_URL = "https://script.google.com/macros/s/AKfycbx_Vq8O4YHJ9UGSrCQ2fRdtXHY5oLpFygJZOdNZfhvKqw_YN3iWfDRHXI9pIEU6Ndgp0w/exec";
 const ANTHROPIC_KEY = "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";
 
 // ── CONSTANTES ────────────────────────────────────────────────
@@ -156,12 +156,15 @@ function WhatsAppPage({onSave}){
     if(!inp.trim()||load)return;
     const txt=inp.trim();const h=horaAtual();
     setInp("");setMsgs(m=>[...m,{s:"left",t:txt,h}]);setLoad(true);setPrev(null);
-    if(!ANTHROPIC_KEY){setMsgs(m=>[...m,{s:"right",t:"⚠️ Chave da API não configurada. Adicione ANTHROPIC_KEY no index.html.",h:horaAtual()}]);setLoad(false);return;}
+    if(!ANTHROPIC_KEY && !SHEETS_URL){setMsgs(m=>[...m,{s:"right",t:"⚠️ Serviço não configurado.",h:horaAtual()}]);setLoad(false);return;}
     try{
-      const hoje=new Date().toISOString().split("T")[0];
-      const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":ANTHROPIC_KEY,"anthropic-version":"2023-06-01"},body:JSON.stringify({model:"claude-3-haiku-20240307",max_tokens:600,system:`Atendente Celina's Cake. Retorne SOMENTE JSON sem markdown:\n{"cliente":string|null,"telefone":string|null,"itens":string,"valor":number|null,"data_retirada":"YYYY-MM-DD"|null,"tipo_entrega":"retirada"|"entrega","endereco":string|null,"observacoes":string|null}\nHoje:${hoje}`,messages:[{role:"user",content:txt}]})});
+      const params=new URLSearchParams();
+      params.append("action","ia");
+      params.append("msg",txt);
+      const res=await fetch(SHEETS_URL,{method:"POST",body:params});
       const data=await res.json();
-      const p=JSON.parse(data.content.map(i=>i.text||"").join("").replace(/```json|```/g,"").trim());
+      if(!data.ok)throw new Error("erro");
+      const p=JSON.parse(data.result);
       setPrev(p);
       const nome=p.cliente?`, ${p.cliente.split(" ")[0]}`:"";
       const dt=p.data_retirada?new Date(p.data_retirada+"T12:00").toLocaleDateString("pt-BR"):null;
