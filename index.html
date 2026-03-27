@@ -112,17 +112,51 @@ const {useState,useEffect,useMemo}=React;
 const {BarChart,Bar,XAxis,YAxis,Tooltip,ResponsiveContainer,CartesianGrid,PieChart,Pie,Cell,Legend}=Recharts;
 
 // ── WHATSAPP ──────────────────────────────────────────────────
-function WaBubble({msg,side}){
-  return(<div style={{display:"flex",justifyContent:side==="right"?"flex-end":"flex-start",marginBottom:6}}><div style={{maxWidth:"78%",padding:"9px 14px",borderRadius:side==="right"?"18px 4px 18px 18px":"4px 18px 18px 18px",background:side==="right"?"#dcf8c6":"#fff",boxShadow:"0 1px 4px rgba(0,0,0,.1)",fontSize:13,lineHeight:1.5,whiteSpace:"pre-wrap",wordBreak:"break-word"}}>{msg}</div></div>);
+function WaBubble({msg,side,hora}){
+  return(
+    <div style={{display:"flex",justifyContent:side==="right"?"flex-end":"flex-start",marginBottom:6}}>
+      <div style={{maxWidth:"78%",padding:"9px 14px",borderRadius:side==="right"?"18px 4px 18px 18px":"4px 18px 18px 18px",background:side==="right"?"#dcf8c6":"#fff",boxShadow:"0 1px 4px rgba(0,0,0,.1)",fontSize:13,lineHeight:1.5,whiteSpace:"pre-wrap",wordBreak:"break-word"}}>
+        {msg}
+        {hora&&<div style={{fontSize:10,color:"#aaa",textAlign:"right",marginTop:4}}>{hora}</div>}
+      </div>
+    </div>
+  );
 }
 
+const WA_HISTORICO_KEY = "celinas-wa-historico";
+
 function WhatsAppPage({onSave}){
-  const[msgs,setMsgs]=useState([{s:"left",t:"Oi!! Quero fazer um pedido 😊"},{s:"right",t:"Olá! Bem-vinda à Celina's Cake 🎂🌸\nQual seria o seu pedido?"}]);
-  const[inp,setInp]=useState("");const[load,setLoad]=useState(false);const[prev,setPrev]=useState(null);
+  const horaAtual=()=>new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+  const historicoInicial=[{s:"left",t:"Oi!! Quero fazer um pedido 😊",h:""},{s:"right",t:"Olá! Bem-vinda à Celina's Cake 🎂🌸\nQual seria o seu pedido?",h:horaAtual()}];
+  
+  const[msgs,setMsgs]=useState(()=>{
+    try{const s=localStorage.getItem(WA_HISTORICO_KEY);return s?JSON.parse(s):historicoInicial;}catch{return historicoInicial;}
+  });
+  const[inp,setInp]=useState("");
+  const[load,setLoad]=useState(false);
+  const[prev,setPrev]=useState(null);
+  const[copiado,setCopiado]=useState(false);
+  const chatRef=React.useRef(null);
+
+  useEffect(()=>{
+    try{localStorage.setItem(WA_HISTORICO_KEY,JSON.stringify(msgs));}catch{}
+    if(chatRef.current)chatRef.current.scrollTop=chatRef.current.scrollHeight;
+  },[msgs]);
+
+  const limparHistorico=()=>{setMsgs(historicoInicial);setPrev(null);try{localStorage.removeItem(WA_HISTORICO_KEY);}catch{}};
+
+  const copiarPedido=()=>{
+    if(!prev)return;
+    const dt=prev.data_retirada?new Date(prev.data_retirada+"T12:00").toLocaleDateString("pt-BR"):"—";
+    const txt=`✅ *PEDIDO CONFIRMADO*\n👤 ${prev.cliente||"—"}\n📞 ${prev.telefone||"—"}\n🥚 ${prev.itens||"—"}\n💰 ${prev.valor?fmt(prev.valor):"—"}\n📅 ${prev.tipo_entrega==="entrega"?"Entrega":"Retirada"}: ${dt}${prev.observacoes?"\n📝 "+prev.observacoes:""}`;
+    navigator.clipboard.writeText(txt).then(()=>{setCopiado(true);setTimeout(()=>setCopiado(false),2000);});
+  };
+
   const send=async()=>{
     if(!inp.trim()||load)return;
-    const txt=inp.trim();setInp("");setMsgs(m=>[...m,{s:"left",t:txt}]);setLoad(true);setPrev(null);
-    if(!ANTHROPIC_KEY){setMsgs(m=>[...m,{s:"right",t:"⚠️ Chave da API não configurada. Adicione ANTHROPIC_KEY no index.html."}]);setLoad(false);return;}
+    const txt=inp.trim();const h=horaAtual();
+    setInp("");setMsgs(m=>[...m,{s:"left",t:txt,h}]);setLoad(true);setPrev(null);
+    if(!ANTHROPIC_KEY){setMsgs(m=>[...m,{s:"right",t:"⚠️ Chave da API não configurada. Adicione ANTHROPIC_KEY no index.html.",h:horaAtual()}]);setLoad(false);return;}
     try{
       const hoje=new Date().toISOString().split("T")[0];
       const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":ANTHROPIC_KEY,"anthropic-version":"2023-06-01"},body:JSON.stringify({model:"claude-3-haiku-20240307",max_tokens:600,system:`Atendente Celina's Cake. Retorne SOMENTE JSON sem markdown:\n{"cliente":string|null,"telefone":string|null,"itens":string,"valor":number|null,"data_retirada":"YYYY-MM-DD"|null,"tipo_entrega":"retirada"|"entrega","endereco":string|null,"observacoes":string|null}\nHoje:${hoje}`,messages:[{role:"user",content:txt}]})});
@@ -132,50 +166,79 @@ function WhatsAppPage({onSave}){
       const nome=p.cliente?`, ${p.cliente.split(" ")[0]}`:"";
       const dt=p.data_retirada?new Date(p.data_retirada+"T12:00").toLocaleDateString("pt-BR"):null;
       let r=`Anotado${nome}! 📝\n\n🥚 *${p.itens}*`;
-      if(p.valor)r+=`\n💰 ${fmt(p.valor)}`;if(dt)r+=`\n📅 ${p.tipo_entrega==="entrega"?"Entrega":"Retirada"}: ${dt}`;
-      if(p.observacoes)r+=`\n📝 ${p.observacoes}`;r+=`\n\nConfirmo? ✅`;
-      setMsgs(m=>[...m,{s:"right",t:r}]);
-    }catch(e){setMsgs(m=>[...m,{s:"right",t:"Hmm, não entendi 😅 Pode detalhar?"}]);}
+      if(p.valor)r+=`\n💰 ${fmt(p.valor)}`;
+      if(dt)r+=`\n📅 ${p.tipo_entrega==="entrega"?"Entrega":"Retirada"}: ${dt}`;
+      if(p.observacoes)r+=`\n📝 ${p.observacoes}`;
+      r+=`\n\nConfirmo? ✅`;
+      setMsgs(m=>[...m,{s:"right",t:r,h:horaAtual()}]);
+    }catch(e){setMsgs(m=>[...m,{s:"right",t:"Hmm, não entendi 😅 Pode detalhar?",h:horaAtual()}]);}
     setLoad(false);
   };
-  const confirmar=()=>{if(!prev)return;onSave({...prev,valor:prev.valor||0});setMsgs(m=>[...m,{s:"left",t:"Sim! ✅"},{s:"right",t:"Confirmado! 🎉🎂 Obrigada! 💕"}]);setPrev(null);};
+
+  const confirmar=()=>{
+    if(!prev)return;
+    onSave({...prev,valor:prev.valor||0});
+    setMsgs(m=>[...m,{s:"left",t:"Sim! ✅",h:horaAtual()},{s:"right",t:"Confirmado! 🎉🎂 Obrigada! 💕\nPedido salvo no sistema!",h:horaAtual()}]);
+    setPrev(null);
+  };
+
   return(
-    <div style={{maxWidth:500,margin:"0 auto"}}>
-      <h2 style={{margin:"0 0 6px",fontSize:18,color:RE}}>💬 Pedido via WhatsApp</h2>
-      <p style={{margin:"0 0 16px",fontSize:13,color:"#aaa"}}>Cole a mensagem do cliente. A IA interpreta e cria o pedido automaticamente.</p>
+    <div style={{maxWidth:520,margin:"0 auto"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+        <div><h2 style={{margin:0,fontSize:18,color:RE}}>💬 Pedido via WhatsApp</h2><p style={{margin:"4px 0 0",fontSize:12,color:"#aaa"}}>Cole a mensagem e a IA cria o pedido automaticamente</p></div>
+        <button onClick={limparHistorico} style={{padding:"6px 12px",borderRadius:10,border:`1.5px solid ${RM}`,background:"#fff",color:"#aaa",fontSize:11,cursor:"pointer"}}>🗑️ Limpar</button>
+      </div>
+
+      {/* Chat */}
       <div style={{borderRadius:18,overflow:"hidden",boxShadow:"0 6px 32px rgba(180,48,74,.15)"}}>
-        <div style={{background:"#075e54",padding:"12px 16px",display:"flex",alignItems:"center",gap:12}}>
-          <div style={{width:38,height:38,borderRadius:"50%",overflow:"hidden",border:"2px solid rgba(255,255,255,.4)"}}><img src={LOGO} style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
-          <div><div style={{color:"#fff",fontWeight:700,fontSize:14}}>Celina's Cake 🎂</div><div style={{color:"rgba(255,255,255,.6)",fontSize:11}}>📱 11 95875-1655</div></div>
+        <div style={{background:"#075e54",padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <div style={{display:"flex",alignItems:"center",gap:12}}>
+            <div style={{width:38,height:38,borderRadius:"50%",overflow:"hidden",border:"2px solid rgba(255,255,255,.4)"}}><img src={LOGO} style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
+            <div><div style={{color:"#fff",fontWeight:700,fontSize:14}}>Celina's Cake 🎂</div><div style={{color:"rgba(255,255,255,.6)",fontSize:11}}>🟢 online · 📱 11 95875-1655</div></div>
+          </div>
+          <div style={{fontSize:11,color:"rgba(255,255,255,.5)"}}>{msgs.length} msgs</div>
         </div>
-        <div style={{background:"#ece5dd",padding:"16px 12px",minHeight:280,maxHeight:360,overflowY:"auto",display:"flex",flexDirection:"column",justifyContent:"flex-end"}}>
-          {msgs.map((m,i)=><WaBubble key={i} msg={m.t} side={m.s}/>)}
+        <div ref={chatRef} style={{background:"#ece5dd",padding:"16px 12px",minHeight:280,maxHeight:400,overflowY:"auto",display:"flex",flexDirection:"column"}}>
+          {msgs.map((m,i)=><WaBubble key={i} msg={m.t} side={m.s} hora={m.h}/>)}
           {load&&<div style={{display:"flex",justifyContent:"flex-end"}}><div style={{background:"#dcf8c6",borderRadius:"18px 4px 18px 18px",padding:"10px 16px",fontSize:13,color:"#888"}}>digitando...</div></div>}
         </div>
         <div style={{background:"#f0f0f0",padding:"10px 12px",display:"flex",gap:8,alignItems:"flex-end"}}>
-          <textarea value={inp} onChange={e=>setInp(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send();}}} placeholder="Cole a mensagem do cliente..." rows={2} style={{flex:1,borderRadius:22,border:"none",padding:"10px 16px",fontSize:13,resize:"none",outline:"none",background:"#fff"}}/>
+          <textarea value={inp} onChange={e=>setInp(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send();}}} placeholder="Cole ou digite a mensagem do cliente..." rows={2} style={{flex:1,borderRadius:22,border:"none",padding:"10px 16px",fontSize:13,resize:"none",outline:"none",background:"#fff"}}/>
           <button onClick={send} disabled={load||!inp.trim()} style={{width:44,height:44,borderRadius:"50%",border:"none",background:load||!inp.trim()?"#ccc":"#25d366",color:"#fff",fontSize:20,cursor:load||!inp.trim()?"not-allowed":"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>➤</button>
         </div>
       </div>
+
+      {/* Preview do pedido */}
       {prev&&(
-        <div style={{marginTop:20,background:"#fff",borderRadius:16,padding:22,border:`2px solid ${ROSA}`}}>
-          <h3 style={{margin:"0 0 14px",color:RE,fontSize:15}}>📋 Pedido interpretado:</h3>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-            {[["👤",prev.cliente||"—"],["📞",prev.telefone||"—"],["🥚",prev.itens||"—"],["💰",prev.valor?fmt(prev.valor):"—"],["📅",prev.data_retirada?new Date(prev.data_retirada+"T12:00").toLocaleDateString("pt-BR"):"—"],["🚚",prev.tipo_entrega==="entrega"?"Entrega":"Retirada"]].map(([k,v])=>(
-              <div key={k} style={{background:RC,borderRadius:10,padding:"10px 12px"}}><div style={{fontSize:10,color:"#aaa",marginBottom:2}}>{k}</div><div style={{fontWeight:700,fontSize:13}}>{v}</div></div>
+        <div style={{marginTop:16,background:"#fff",borderRadius:16,padding:20,border:`2px solid ${ROSA}`,boxShadow:"0 4px 20px rgba(180,48,74,.1)"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+            <h3 style={{margin:0,color:RE,fontSize:15}}>📋 Pedido interpretado</h3>
+            <button onClick={copiarPedido} style={{padding:"5px 12px",borderRadius:10,border:`1.5px solid ${RM}`,background:copiado?"#eaf5f1":"#fff",color:copiado?VE:"#aaa",fontSize:11,fontWeight:700,cursor:"pointer"}}>{copiado?"✅ Copiado!":"📋 Copiar"}</button>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:14}}>
+            {[["👤 Cliente",prev.cliente||"—"],["📞 Telefone",prev.telefone||"—"],["🥚 Produto",prev.itens||"—"],["💰 Valor",prev.valor?fmt(prev.valor):"—"],["📅 Data",prev.data_retirada?new Date(prev.data_retirada+"T12:00").toLocaleDateString("pt-BR"):"—"],["🚚 Tipo",prev.tipo_entrega==="entrega"?"Entrega":"Retirada"]].map(([k,v])=>(
+              <div key={k} style={{background:RC,borderRadius:10,padding:"8px 12px"}}><div style={{fontSize:10,color:"#aaa",marginBottom:2}}>{k}</div><div style={{fontWeight:700,fontSize:12,wordBreak:"break-word"}}>{v}</div></div>
             ))}
           </div>
-          <div style={{display:"flex",gap:10,marginTop:16}}>
-            <button onClick={confirmar} style={{flex:1,padding:13,borderRadius:12,border:"none",background:`linear-gradient(135deg,${VE},#7abf9e)`,color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer"}}>✅ Confirmar e Salvar</button>
-            <button onClick={()=>setPrev(null)} style={{padding:"13px 18px",borderRadius:12,border:`1.5px solid #f0dde4`,background:"#fff",color:"#aaa",fontSize:14,cursor:"pointer"}}>✏️</button>
+          {prev.observacoes&&<div style={{background:"#fffbe6",borderRadius:10,padding:"8px 12px",fontSize:12,marginBottom:14,border:`1px solid ${AM}`}}>📝 {prev.observacoes}</div>}
+          <div style={{display:"flex",gap:8}}>
+            <button onClick={confirmar} style={{flex:1,padding:12,borderRadius:12,border:"none",background:`linear-gradient(135deg,${VE},#7abf9e)`,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer"}}>✅ Confirmar com 1 clique</button>
+            <button onClick={()=>setPrev(null)} style={{padding:"12px 14px",borderRadius:12,border:`1.5px solid #f0dde4`,background:"#fff",color:"#aaa",fontSize:13,cursor:"pointer"}}>✏️</button>
           </div>
         </div>
       )}
-      <div style={{marginTop:16,background:"#fff8f4",borderRadius:14,padding:16,border:"1px solid #f0dde4"}}>
-        <div style={{fontSize:11,color:"#aaa",marginBottom:8,textTransform:"uppercase",letterSpacing:1}}>💡 Exemplos</div>
-        {["Oi! Quero 3 ovos tradicionais ao leite 250g pra retirar dia 15/04. Sou a Maria.","Bom dia! Me chamo Ana, quero um Ovo Fatia e Ovo Coração Branco 400g pra sábado."].map((ex,i)=>(
-          <div key={i} onClick={()=>setInp(ex)} style={{padding:"8px 12px",borderRadius:10,background:"#fff",border:"1px solid #f0dde4",fontSize:12,color:"#555",cursor:"pointer",marginBottom:6,lineHeight:1.5}}>"{ex}"</div>
-        ))}
+
+      {/* Exemplos rápidos */}
+      <div style={{marginTop:14,background:"#fff8f4",borderRadius:14,padding:14,border:"1px solid #f0dde4"}}>
+        <div style={{fontSize:11,color:"#aaa",marginBottom:8,textTransform:"uppercase",letterSpacing:1}}>⚡ Atalhos rápidos</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+          {["Oi! Quero 2 ovos ao leite 250g pra retirar dia 15/04. Sou a Maria, tel 11999990000.","Bom dia! Ana aqui, quero Ovo Fatia 700g e Ovo Coração Branco 400g pra sábado 19/04.","Oi, sou o João, quero 50 brigadeiros ao leite pra entregar dia 20/04 na Rua das Flores 10.","Me chamo Bia, quero kit confeiteiro kids 150g pra retirar quinta-feira."].map((ex,i)=>(
+            <div key={i} onClick={()=>setInp(ex)} style={{padding:"8px 10px",borderRadius:10,background:"#fff",border:"1px solid #f0dde4",fontSize:11,color:"#555",cursor:"pointer",lineHeight:1.4}}>
+              <div style={{fontSize:10,color:RE,fontWeight:700,marginBottom:2}}>Exemplo {i+1}</div>
+              {ex.slice(0,60)}...
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
