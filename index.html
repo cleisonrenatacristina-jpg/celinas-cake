@@ -339,18 +339,25 @@ function App(){
   const[filtroPago,setFiltroPago]=useState("todos");
 
   const cardapio=useMemo(()=>CAD_BASE.map(p=>({...p,preco:precos[p.nome]??p.preco})),[precos]);
+  const mesesDisp=useMemo(()=>Array.from(new Set(orders.map(o=>o.data_retirada?.slice(0,7)).filter(Boolean))).sort(),[orders]);
+  const filtrosAtivos=filtroMes||filtroValMin||filtroValMax||filtroPago!=="todos";
+  const ordFil=useMemo(()=>orders.filter(o=>{if(filtroMes&&o.data_retirada?.slice(0,7)!==filtroMes)return false;if(filtroValMin!==""&&(o.valor||0)<parseFloat(filtroValMin))return false;if(filtroValMax!==""&&(o.valor||0)>parseFloat(filtroValMax))return false;if(filtroPago==="pago"&&!o.pago)return false;if(filtroPago==="nao_pago"&&o.pago)return false;return true;}),[orders,filtroMes,filtroValMin,filtroValMax,filtroPago]);
+  const resumoF=useMemo(()=>({total:ordFil.length,recebido:ordFil.filter(o=>o.pago).reduce((s,o)=>s+(o.valor||0),0)+ordFil.filter(o=>o.pagoParcial).reduce((s,o)=>s+(o.entrada||0),0),aReceber:ordFil.filter(o=>!o.pago&&!o.pagoParcial).reduce((s,o)=>s+(o.valor||0),0)+ordFil.filter(o=>o.pagoParcial).reduce((s,o)=>s+((o.valor||0)-(o.entrada||0)),0),totalValor:ordFil.reduce((s,o)=>s+(o.valor||0),0)}),[ordFil]);
+  const lista=useMemo(()=>{const base=filter==="todos"?ordFil:ordFil.filter(o=>o.status===filter);return[...base].sort((a,b)=>{if(a.status==="entregue"&&b.status!=="entregue")return 1;if(b.status==="entregue"&&a.status!=="entregue")return -1;if(!a.data_retirada)return 1;if(!b.data_retirada)return -1;return a.data_retirada>b.data_retirada?1:-1;});},[ordFil,filter]);
+  const prodData=useMemo(()=>{const m={};orders.forEach(o=>{const k=o.itens?.split("(")[0].trim()||"Outros";m[k]=(m[k]||0)+1;});return Object.entries(m).map(([name,qty])=>({name,qty})).sort((a,b)=>b.qty-a.qty);},[orders]);
+  const valData=useMemo(()=>{const m={};orders.forEach(o=>{const k=o.itens?.split("(")[0].trim()||"Outros";m[k]=(m[k]||0)+(o.valor||0);});return Object.entries(m).map(([name,total])=>({name,total})).sort((a,b)=>b.total-a.total);},[orders]);
+  const stData=useMemo(()=>Object.entries(ST).map(([k,v])=>({name:v.label,value:orders.filter(o=>o.status===k).length,color:v.color})).filter(d=>d.value>0),[orders]);
+  const fatData=useMemo(()=>{const m={};orders.forEach(o=>{const mm=o.data_retirada?o.data_retirada.slice(0,7):"?";if(!m[mm])m[mm]={mes:mm,recebido:0,aReceber:0};o.pago?m[mm].recebido+=(o.valor||0):m[mm].aReceber+=(o.valor||0);});return Object.values(m).sort((a,b)=>a.mes>b.mes?1:-1).map(d=>({...d,mes:d.mes==="?"?"?":new Date(d.mes+"-01").toLocaleDateString("pt-BR",{month:"short",year:"2-digit"})}));},[orders]);
+  const cats=["Todas",...Array.from(new Set(cardapio.map(p=>p.cat)))];
+  const naoEnt=lista.filter(o=>o.status!=="entregue");
+  const atrasados=orders.filter(o=>o.status!=="entregue"&&getDias(o.data_retirada,agora)<0);
+  const totalRecebido=orders.filter(o=>o.pago).reduce((s,o)=>s+(o.valor||0),0)+orders.filter(o=>o.pagoParcial).reduce((s,o)=>s+(o.entrada||0),0);
+  const totalAReceber=orders.filter(o=>!o.pago&&!o.pagoParcial).reduce((s,o)=>s+(o.valor||0),0)+orders.filter(o=>o.pagoParcial).reduce((s,o)=>s+((o.valor||0)-(o.entrada||0)),0);
+  const totalPendentes=orders.filter(o=>o.status==="pendente"||o.status==="em_producao").length;
+  const totalProntos=orders.filter(o=>o.status==="pronto").length;
 
   const handleLogin=u=>{setLogado(true);setUserAtual(u);try{localStorage.setItem("celinas-logado",u);}catch{}};
   const handleLogout=()=>{setLogado(false);setUserAtual("");try{localStorage.removeItem("celinas-logado");}catch{}};
-
-  useEffect(()=>{
-    if(!logado)return;
-    setInterval(()=>setAgora(new Date()),60000);
-    apiLoad().then(data=>{if(data.length>0){setOrders(data);setNextId(Math.max(...data.map(o=>o.id||0))+1);}setLoading(false);});
-  },[logado]);
-
-  if(!logado) return <LoginPage onLogin={handleLogin}/>;
-
   const showToast=(msg,type="ok")=>{setToast({msg,type});setTimeout(()=>setToast(null),3000);};
   const persist=async n=>{setSaving(true);await apiSave(n);setSaving(false);};
   const saveOrder=async data=>{let n;if(data.id){n=orders.map(x=>x.id===data.id?{...x,...data}:x);showToast("Atualizado! 💾");}else{const novo={...data,id:nextId,status:"pendente",pago:false,pagoParcial:false,entrada:0};n=[novo,...orders];setNextId(i=>i+1);showToast("Pedido criado! 🎂");}setOrders(n);setForm(null);await persist(n);};
@@ -358,23 +365,12 @@ function App(){
   const updSt=async(id,s)=>{const n=orders.map(x=>x.id===id?{...x,status:s}:x);setOrders(n);await persist(n);};
   const updPag=async(id,tipo,val)=>{const n=orders.map(x=>x.id===id?{...x,pago:tipo==="pago",pagoParcial:tipo==="parcial",entrada:tipo==="parcial"?parseFloat(val)||0:tipo==="pago"?x.valor:0}:x);setOrders(n);await persist(n);};
 
-  const mesesDisp=useMemo(()=>Array.from(new Set(orders.map(o=>o.data_retirada?.slice(0,7)).filter(Boolean))).sort(),[orders]);
-  const filtrosAtivos=filtroMes||filtroValMin||filtroValMax||filtroPago!=="todos";
-  const ordFil=useMemo(()=>orders.filter(o=>{if(filtroMes&&o.data_retirada?.slice(0,7)!==filtroMes)return false;if(filtroValMin!==""&&(o.valor||0)<parseFloat(filtroValMin))return false;if(filtroValMax!==""&&(o.valor||0)>parseFloat(filtroValMax))return false;if(filtroPago==="pago"&&!o.pago)return false;if(filtroPago==="nao_pago"&&o.pago)return false;return true;}),[orders,filtroMes,filtroValMin,filtroValMax,filtroPago]);
-  const resumoF=useMemo(()=>({total:ordFil.length,recebido:ordFil.filter(o=>o.pago).reduce((s,o)=>s+(o.valor||0),0)+ordFil.filter(o=>o.pagoParcial).reduce((s,o)=>s+(o.entrada||0),0),aReceber:ordFil.filter(o=>!o.pago&&!o.pagoParcial).reduce((s,o)=>s+(o.valor||0),0)+ordFil.filter(o=>o.pagoParcial).reduce((s,o)=>s+((o.valor||0)-(o.entrada||0)),0),totalValor:ordFil.reduce((s,o)=>s+(o.valor||0),0)}),[ordFil]);
-  const lista=useMemo(()=>{const base=filter==="todos"?ordFil:ordFil.filter(o=>o.status===filter);return[...base].sort((a,b)=>{if(a.status==="entregue"&&b.status!=="entregue")return 1;if(b.status==="entregue"&&a.status!=="entregue")return -1;if(!a.data_retirada)return 1;if(!b.data_retirada)return -1;return a.data_retirada>b.data_retirada?1:-1;});},[ordFil,filter]);
-  const naoEnt=lista.filter(o=>o.status!=="entregue");
-  const atrasados=orders.filter(o=>o.status!=="entregue"&&getDias(o.data_retirada,agora)<0);
-  const totalRecebido=orders.filter(o=>o.pago).reduce((s,o)=>s+(o.valor||0),0)+orders.filter(o=>o.pagoParcial).reduce((s,o)=>s+(o.entrada||0),0);
-  const totalAReceber=orders.filter(o=>!o.pago&&!o.pagoParcial).reduce((s,o)=>s+(o.valor||0),0)+orders.filter(o=>o.pagoParcial).reduce((s,o)=>s+((o.valor||0)-(o.entrada||0)),0);
-  const totalPendentes=orders.filter(o=>o.status==="pendente"||o.status==="em_producao").length;
-  const totalProntos=orders.filter(o=>o.status==="pronto").length;
-  const prodData=useMemo(()=>{const m={};orders.forEach(o=>{const k=o.itens?.split("(")[0].trim()||"Outros";m[k]=(m[k]||0)+1;});return Object.entries(m).map(([name,qty])=>({name,qty})).sort((a,b)=>b.qty-a.qty);},[orders]);
-  const valData=useMemo(()=>{const m={};orders.forEach(o=>{const k=o.itens?.split("(")[0].trim()||"Outros";m[k]=(m[k]||0)+(o.valor||0);});return Object.entries(m).map(([name,total])=>({name,total})).sort((a,b)=>b.total-a.total);},[orders]);
-  const stData=useMemo(()=>Object.entries(ST).map(([k,v])=>({name:v.label,value:orders.filter(o=>o.status===k).length,color:v.color})).filter(d=>d.value>0),[orders]);
-  const fatData=useMemo(()=>{const m={};orders.forEach(o=>{const mm=o.data_retirada?o.data_retirada.slice(0,7):"?";if(!m[mm])m[mm]={mes:mm,recebido:0,aReceber:0};o.pago?m[mm].recebido+=(o.valor||0):m[mm].aReceber+=(o.valor||0);});return Object.values(m).sort((a,b)=>a.mes>b.mes?1:-1).map(d=>({...d,mes:d.mes==="?"?"?":new Date(d.mes+"-01").toLocaleDateString("pt-BR",{month:"short",year:"2-digit"})}));},[orders]);
-  const cats=["Todas",...Array.from(new Set(cardapio.map(p=>p.cat)))];
-
+  useEffect(()=>{
+    if(!logado)return;
+    const t=setInterval(()=>setAgora(new Date()),60000);
+    apiLoad().then(data=>{if(data.length>0){setOrders(data);setNextId(Math.max(...data.map(o=>o.id||0))+1);}setLoading(false);});
+    return()=>clearInterval(t);
+  },[logado]);
   return(
     <div style={{fontFamily:"Georgia,serif",minHeight:"100vh",background:"#fdf4f6",color:"#3a1a22"}}>
       {loading&&<div style={{position:"fixed",inset:0,background:"#fdf4f6",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:16,zIndex:998}}><div style={{fontSize:48}}>🎂</div><div style={{fontSize:16,color:RE,fontWeight:700}}>Carregando pedidos...</div></div>}
