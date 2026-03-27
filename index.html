@@ -368,8 +368,13 @@ function App(){
   useEffect(()=>{
     if(!logado)return;
     const t=setInterval(()=>setAgora(new Date()),60000);
-    apiLoad().then(data=>{if(data.length>0){setOrders(data);setNextId(Math.max(...data.map(o=>o.id||0))+1);}setLoading(false);});
-    return()=>clearInterval(t);
+    const timeout=setTimeout(()=>setLoading(false),8000); // timeout 8s
+    apiLoad().then(data=>{
+      clearTimeout(timeout);
+      if(data.length>0){setOrders(data);setNextId(Math.max(...data.map(o=>o.id||0))+1);}
+      setLoading(false);
+    }).catch(()=>{clearTimeout(timeout);setLoading(false);});
+    return()=>{clearInterval(t);clearTimeout(timeout);};
   },[logado]);
   return(
     <div style={{fontFamily:"Georgia,serif",minHeight:"100vh",background:"#fdf4f6",color:"#3a1a22"}}>
