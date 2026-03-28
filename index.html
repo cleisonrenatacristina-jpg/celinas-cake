@@ -1,84 +1,99 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Celina's Cake</title>
-<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<script src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
-<script src="https://unpkg.com/recharts@2.8.0/umd/Recharts.js"></script>
-<style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:Georgia,serif;background:#fdf4f6;}</style>
-</head>
-<body>
-<div id="root"></div>
-<script type="text/babel">
-const SHEETS_URL="https://script.google.com/macros/s/AKfycbwkZDsWZj3i7hedaq6D6oBqXMGMbA_L97m2y9nIO9UMhR5ZtUujSimiQ-FQbL5-xlmYAg/exec";
-const ROSA="#d4607a",RE="#b5304a",RC="#fce4ec",RM="#f8bbd0",VE="#4a9b7f",AM="#e8a020";
-const LOGO="https://static.ifood-static.com.br/image/upload/t_thumbnail/logosgde/118fefb7-ed84-42c0-af19-c3c81521be3d/202009252306_A4Vw_i.jpg";
-const PAL=[RE,ROSA,"#e89aaa",VE,AM,"#7abf9e","#f5c6a0","#9b59b6"];
-const ST={pendente:{label:"Pendente",icon:"⏳",color:"#e8b86d",bg:"#fdf6e3"},em_producao:{label:"Em Produção",icon:"👩‍🍳",color:ROSA,bg:RC},pronto:{label:"Pronto",icon:"✅",color:VE,bg:"#eaf5f1"},entregue:{label:"Entregue",icon:"🎁",color:"#888",bg:"#f5f5f5"}};
-const fmt=v=>`R$ ${Number(v).toFixed(2).replace(".",",")}`;
-const getDias=(dr,ag)=>{if(!dr)return null;return Math.ceil((new Date(dr+"T00:00:00")-new Date(ag.toDateString()))/86400000);};
-const getPrazo=(d,s)=>{if(s==="entregue"||d===null)return null;if(d<0)return{label:`${Math.abs(d)}d atrasado`,color:"#e05555",bg:"#fff0f0",icon:"🚨"};if(d===0)return{label:"Hoje!",color:"#e07020",bg:"#fff5e0",icon:"⚡"};if(d===1)return{label:"Amanhã",color:AM,bg:"#fffbe6",icon:"⏰"};if(d<=3)return{label:`${d}d`,color:ROSA,bg:RC,icon:"📅"};return{label:`${d}d`,color:"#888",bg:"#f5f5f5",icon:"📅"};};
-const getBadge=o=>({bg:o.pago?"#eaf5f1":o.pagoParcial?"#fff8ec":"#fff5e0",color:o.pago?VE:o.pagoParcial?AM:"#e8a020",text:o.pago?"💰 Pago":o.pagoParcial?`💛 Entrada ${fmt(o.entrada||0)}`:"⏳ A pagar"});
-async function apiLoad(){try{const r=await fetch(`${SHEETS_URL}?action=load`);const d=await r.json();if(d.ok&&d.orders?.length>0)return d.orders;}catch(e){}return[];}
-async function apiSave(orders){try{const p=new URLSearchParams();p.append("action","save");p.append("orders",JSON.stringify(orders));await fetch(SHEETS_URL,{method:"POST",body:p});}catch(e){}}
-async function apiIA(msg){try{const p=new URLSearchParams();p.append("action","ia");p.append("msg",msg);const r=await fetch(SHEETS_URL,{method:"POST",body:p});const d=await r.json();if(d.ok)return JSON.parse(d.result);}catch(e){}return null;}
-const {useState,useEffect,useMemo,useRef}=React;
-const {BarChart,Bar,XAxis,YAxis,Tooltip,ResponsiveContainer,CartesianGrid,PieChart,Pie,Cell,Legend}=Recharts;
-function WaBubble({msg,side,hora}){return React.createElement("div",{style:{display:"flex",justifyContent:side==="right"?"flex-end":"flex-start",marginBottom:6}},React.createElement("div",{style:{maxWidth:"78%",padding:"9px 14px",borderRadius:side==="right"?"18px 4px 18px 18px":"4px 18px 18px 18px",background:side==="right"?"#dcf8c6":"#fff",fontSize:13,lineHeight:1.5,whiteSpace:"pre-wrap",wordBreak:"break-word"}},msg,hora&&React.createElement("div",{style:{fontSize:10,color:"#aaa",textAlign:"right",marginTop:4}},hora)));}
-function App(){
-  const[view,setView]=useState("pedidos");
-  const[orders,setOrders]=useState([]);
-  const[form,setForm]=useState(null);
-  const[filter,setFilter]=useState("todos");
-  const[loading,setLoading]=useState(true);
-  const[saving,setSaving]=useState(false);
-  const[toast,setToast]=useState(null);
-  const[agora,setAgora]=useState(new Date());
-  const[nextId,setNextId]=useState(1);
-  const[precos,setPrecos]=useState(()=>Object.fromEntries([{nome:"Ovo Tradicional Ao Leite 250g",preco:55},{nome:"Ovo Tradicional Branco 250g",preco:62}].map(p=>[p.nome,p.preco])));
-  const showToast=(msg,type="ok")=>{setToast({msg,type});setTimeout(()=>setToast(null),3000);};
-  const persist=async n=>{setSaving(true);await apiSave(n);setSaving(false);};
-  const saveOrder=async data=>{let n;if(data.id){n=orders.map(x=>x.id===data.id?{...x,...data}:x);showToast("Atualizado!");}else{const novo={...data,id:nextId,status:"pendente",pago:false,pagoParcial:false,entrada:0};n=[novo,...orders];setNextId(i=>i+1);showToast("Pedido criado! 🎂");}setOrders(n);setForm(null);await persist(n);};
-  const delOrder=async id=>{const n=orders.filter(x=>x.id!==id);setOrders(n);showToast("Removido.","err");await persist(n);};
-  const updSt=async(id,s)=>{const n=orders.map(x=>x.id===id?{...x,status:s}:x);setOrders(n);await persist(n);};
-  const updPag=async(id,tipo,val)=>{const n=orders.map(x=>x.id===id?{...x,pago:tipo==="pago",pagoParcial:tipo==="parcial",entrada:tipo==="parcial"?parseFloat(val)||0:tipo==="pago"?x.valor:0}:x);setOrders(n);await persist(n);};
-  useEffect(()=>{
-    const t=setInterval(()=>setAgora(new Date()),60000);
-    const timeout=setTimeout(()=>setLoading(false),8000);
-    apiLoad().then(data=>{clearTimeout(timeout);if(data.length>0){setOrders(data);setNextId(Math.max(...data.map(o=>o.id||0))+1);}setLoading(false);}).catch(()=>{clearTimeout(timeout);setLoading(false);});
-    return()=>{clearInterval(t);clearTimeout(timeout);};
-  },[]);
-  if(loading)return React.createElement("div",{style:{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#fdf4f6",flexDirection:"column",gap:16}},React.createElement("div",{style:{fontSize:48}},"🎂"),React.createElement("div",{style:{fontSize:16,color:RE,fontWeight:700}},"Carregando pedidos..."));
-  return React.createElement("div",{style:{fontFamily:"Georgia,serif",minHeight:"100vh",background:"#fdf4f6"}},
-    React.createElement("header",{style:{background:`linear-gradient(135deg,${RE},${ROSA})`,padding:"14px 24px",display:"flex",alignItems:"center",justifyContent:"space-between"}},
-      React.createElement("div",{style:{display:"flex",alignItems:"center",gap:12}},
-        React.createElement("img",{src:LOGO,style:{width:48,height:48,borderRadius:12,objectFit:"cover"}}),
-        React.createElement("div",null,
-          React.createElement("div",{style:{fontSize:20,fontWeight:"bold",fontStyle:"italic",color:"#fff"}},"Celina's Cake"),
-          React.createElement("div",{style:{fontSize:9,color:"rgba(255,255,255,.6)",textTransform:"uppercase",letterSpacing:3}},`🐣 Páscoa 2026 · ${saving?"💾 salvando...":"✓ salvo"}`)
-        )
-      ),
-      React.createElement("nav",{style:{display:"flex",gap:6,flexWrap:"wrap"}},
-        [["dashboard","📊 Painel"],["whatsapp","💬 WhatsApp"],["pedidos","📋 Pedidos"],["cardapio","🍫 Cardápio"],["precos","💲 Preços"]].map(([v,l])=>
-          React.createElement("button",{key:v,onClick:()=>setView(v),style:{padding:"7px 15px",borderRadius:20,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,background:view===v?"#fff":"rgba(255,255,255,.2)",color:view===v?RE:"#fff"}},l)
-        )
-      )
-    ),
-    React.createElement("main",{style:{maxWidth:1080,margin:"0 auto",padding:"24px 20px"}},
-      React.createElement("div",{style:{textAlign:"center",padding:"60px 0",color:"#aaa"}},
-        React.createElement("div",{style:{fontSize:52}},"🎂"),
-        React.createElement("div",{style:{marginTop:10,fontSize:18,color:RE,fontWeight:700}},"Celina's Cake funcionando!"),
-        React.createElement("div",{style:{marginTop:8,fontSize:14}},"Atualize o código completo no GitHub para ter todas as funcionalidades.")
-      )
-    ),
-    toast&&React.createElement("div",{style:{position:"fixed",bottom:24,right:24,padding:"12px 20px",borderRadius:12,background:toast.type==="err"?"#e07070":RE,color:"#fff",fontSize:14,fontWeight:700,zIndex:999}},toast.msg)
-  );
+function doPost(e) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Pedidos");
+  const action = e.parameter.action;
+  const headers = ["id","cliente","telefone","itens","valor","data_retirada","status","pago","pagoParcial","entrada","tipo_entrega","endereco","observacoes","forma_pagamento"];
+
+  if (action === "save") {
+    const orders = JSON.parse(e.parameter.orders);
+    sheet.clearContents();
+    sheet.appendRow(headers);
+    orders.forEach(o => {
+      sheet.appendRow([
+        o.id, o.cliente||"", o.telefone||"", o.itens||"", o.valor||0,
+        "'"+(o.data_retirada||""), o.status||"pendente",
+        o.pago?"TRUE":"FALSE", o.pagoParcial?"TRUE":"FALSE",
+        o.entrada||0, o.tipo_entrega||"retirada",
+        o.endereco||"", o.observacoes||"", o.forma_pagamento||"PIX"
+      ]);
+    });
+    return output(JSON.stringify({ok:true}));
+  }
+
+  if (action === "ia") {
+    const msg = e.parameter.msg;
+    const hoje = Utilities.formatDate(new Date(), "America/Sao_Paulo", "yyyy-MM-dd");
+    const payload = {
+      model: "claude-3-haiku-20240307",
+      max_tokens: 600,
+      system: `Atendente Celina's Cake. Retorne SOMENTE JSON sem markdown:\n{"cliente":null,"telefone":null,"itens":"","valor":null,"data_retirada":null,"tipo_entrega":"retirada","endereco":null,"observacoes":null}\nHoje:${hoje}`,
+      messages: [{role:"user", content: msg}]
+    };
+    const options = {
+      method: "post",
+      contentType: "application/json",
+      headers: {
+        "x-api-key": "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",
+        "anthropic-version": "2023-06-01"
+      },
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    };
+    const resp = UrlFetchApp.fetch("https://api.anthropic.com/v1/messages", options);
+    const data = JSON.parse(resp.getContentText());
+    const text = data.content.map(i=>i.text||"").join("").replace(/```json|```/g,"").trim();
+    return output(JSON.stringify({ok:true, result: text}));
+  }
+
+  return output(JSON.stringify({ok:false, error:"ação inválida"}));
 }
-ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
-</script>
-</body>
-</html>
+
+function doGet(e) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Pedidos");
+  const action = e.parameter.action;
+
+  if (action === "load") {
+    const rows = sheet.getDataRange().getValues();
+    if (rows.length <= 1) {
+      return output(JSON.stringify({ ok: true, orders: [] }));
+    }
+    const heads = rows[0];
+    const orders = rows.slice(1).map(r => {
+      const o = {};
+      heads.forEach((h, i) => o[h] = r[i]);
+      
+      // Corrige booleanos
+      o.pago        = o.pago === true || o.pago === "TRUE" || o.pago === "true";
+      o.pagoParcial = o.pagoParcial === true || o.pagoParcial === "TRUE" || o.pagoParcial === "true";
+      
+      // Corrige números
+      o.valor   = parseFloat(o.valor)   || 0;
+      o.entrada = parseFloat(o.entrada) || 0;
+      o.id      = parseInt(o.id)        || 0;
+      
+      // Corrige data — remove apóstrofo se existir e garante formato YYYY-MM-DD
+      let data = String(o.data_retirada || "").trim().replace(/^'/, "");
+      if (data && data !== "") {
+        // Se vier como objeto Date do Sheets, converte
+        if (o.data_retirada instanceof Date) {
+          const d = o.data_retirada;
+          const yyyy = d.getFullYear();
+          const mm   = String(d.getMonth() + 1).padStart(2, "0");
+          const dd   = String(d.getDate()).padStart(2, "0");
+          data = `${yyyy}-${mm}-${dd}`;
+        }
+      }
+      o.data_retirada = data;
+      
+      return o;
+    });
+    return output(JSON.stringify({ ok: true, orders }));
+  }
+
+  return output(JSON.stringify({ ok: false, error: "ação inválida" }));
+}
+
+function output(text) {
+  return ContentService
+    .createTextOutput(text)
+    .setMimeType(ContentService.MimeType.JSON);
+}
