@@ -235,15 +235,171 @@ function WhatsAppPage({onSave}){
   );
 }
 
-function PrecosPage({cardapio,precos,setPrecos}){
-  const[catF,setCatF]=useState("Todas");const[busca,setBusca]=useState("");const[saved,setSaved]=useState(false);
-  const cats=["Todas",...Array.from(new Set(cardapio.map(p=>p.cat)))];
+function PrecosPage({cardapio,precos,setPrecos,extrasCardapio,setExtrasCardapio}){
+  const[catF,setCatF]=useState("Todas");
+  const[busca,setBusca]=useState("");
+  const[saved,setSaved]=useState(false);
+  const[aba,setAba]=useState("precos");
+  const[novoNome,setNovoNome]=useState("");
+  const[novoPreco,setNovoPreco]=useState("");
+  const[novaCat,setNovaCat]=useState("");
+  const[novaObs,setNovaObs]=useState("");
+  const[catCustom,setCatCustom]=useState("");
+  const[errNovo,setErrNovo]=useState("");
+
+  const catsBase=Array.from(new Set(CAD_BASE.map(p=>p.cat)));
+  const catsExtras=Array.from(new Set((extrasCardapio||[]).map(p=>p.cat)));
+  const todasCats=["Todas",...Array.from(new Set([...catsBase,...catsExtras]))];
+
   const fil=cardapio.filter(p=>(catF==="Todas"||p.cat===catF)&&p.nome.toLowerCase().includes(busca.toLowerCase()));
+
   const upd=(nome,val)=>{const v=parseFloat(val);if(!isNaN(v)&&v>=0){setPrecos(p=>({...p,[nome]:v}));setSaved(true);setTimeout(()=>setSaved(false),2000);}};
   const reaj=pct=>{const n={...precos};fil.forEach(p=>{n[p.nome]=parseFloat((p.preco*(1+pct/100)).toFixed(2));});setPrecos(n);setSaved(true);setTimeout(()=>setSaved(false),2000);};
-  const reset=()=>{const n={...precos};fil.forEach(p=>{const o=CAD_BASE.find(x=>x.nome===p.nome);if(o)n[p.nome]=o.preco;});setPrecos(n);};
-  return(<><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,flexWrap:"wrap",gap:12}}><div><h2 style={{margin:0,fontSize:20,color:RE}}>💲 Gestão de Preços</h2><p style={{margin:"4px 0 0",fontSize:12,color:"#aaa"}}>Edite valores para descontos ou reajustes</p></div><div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}><div style={{display:"flex",gap:6,alignItems:"center",background:"#fff",borderRadius:12,padding:"6px 12px",border:`1.5px solid ${RM}`}}><span style={{fontSize:12,color:"#888"}}>Reajuste:</span>{[-10,-5,5,10].map(p=><button key={p} onClick={()=>reaj(p)} style={{padding:"4px 10px",borderRadius:8,border:"1.5px solid",borderColor:p<0?"#e07070":VE,background:p<0?"#fff5f4":"#eaf5f1",color:p<0?"#e07070":VE,fontSize:11,fontWeight:700,cursor:"pointer"}}>{p>0?"+":""}{p}%</button>)}</div><button onClick={reset} style={{padding:"8px 14px",borderRadius:12,border:`1.5px solid ${RM}`,background:"#fff",color:"#aaa",fontSize:12,cursor:"pointer"}}>↩️</button>{saved&&<span style={{fontSize:12,color:VE,fontWeight:700}}>✅ Salvo!</span>}</div></div><div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap"}}><input value={busca} onChange={e=>setBusca(e.target.value)} placeholder="🔍 Buscar..." style={{padding:"8px 14px",borderRadius:10,border:`1.5px solid ${RM}`,fontSize:13,outline:"none",minWidth:200}}/><div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{cats.map(c=><button key={c} onClick={()=>setCatF(c)} style={{padding:"5px 12px",borderRadius:20,border:"2px solid",borderColor:catF===c?RE:"#f0dde4",background:catF===c?RE:"#fff",color:catF===c?"#fff":"#888",fontSize:11,fontWeight:700,cursor:"pointer"}}>{c}</button>)}</div></div>{cats.filter(c=>c!=="Todas"&&(catF==="Todas"||catF===c)).map(cat=>{const items=fil.filter(p=>p.cat===cat);if(!items.length)return null;return(<div key={cat} style={{background:"#fff",borderRadius:16,marginBottom:14,overflow:"hidden",boxShadow:"0 2px 12px rgba(180,48,74,.07)"}}><div style={{background:`linear-gradient(135deg,${RE},${ROSA})`,padding:"11px 18px",display:"flex",justifyContent:"space-between"}}><span style={{color:"#fff",fontWeight:700,fontSize:14}}>{cat}</span><span style={{color:"rgba(255,255,255,.7)",fontSize:11}}>{items.length} produto(s)</span></div>{items.map((p,i)=>{const orig=CAD_BASE.find(x=>x.nome===p.nome)?.preco;const alt=p.preco!==orig;return(<div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 18px",borderBottom:i<items.length-1?"1px solid #fce4ec":"none",gap:12,background:alt?"#fffbe6":"#fff"}}><div style={{flex:1}}><div style={{fontSize:13,fontWeight:600}}>{p.nome}</div>{p.obs&&<div style={{fontSize:11,color:"#aaa"}}>{p.obs}</div>}{alt&&<div style={{fontSize:10,color:AM}}>Original: {fmt(orig||0)}</div>}</div><div style={{display:"flex",alignItems:"center",gap:8}}><div style={{display:"flex",alignItems:"center",gap:4,background:RC,borderRadius:10,padding:"6px 12px",border:`1.5px solid ${RM}`}}><span style={{fontSize:12,color:"#aaa"}}>R$</span><input type="number" step="0.01" min="0" defaultValue={p.preco} key={p.preco} onBlur={e=>upd(p.nome,e.target.value)} style={{width:70,border:"none",background:"transparent",fontSize:14,fontWeight:700,color:RE,outline:"none",textAlign:"right"}}/></div>{alt&&<button onClick={()=>{if(orig)setPrecos(prev=>({...prev,[p.nome]:orig}));}} style={{padding:"4px 8px",borderRadius:8,border:"1.5px solid #f0dde4",background:"#fff",color:"#aaa",fontSize:11,cursor:"pointer"}}>↩️</button>}</div></div>);})}</div>);})}</>);
+  const resetFil=()=>{const n={...precos};fil.forEach(p=>{const o=CAD_BASE.find(x=>x.nome===p.nome);if(o)n[p.nome]=o.preco;});setPrecos(n);};
+
+  const catFinal=novaCat==="__nova__"?catCustom.trim():novaCat;
+
+  const addProduto=()=>{
+    if(!novoNome.trim())return setErrNovo("Informe o nome do produto.");
+    if(!novoPreco||isNaN(parseFloat(novoPreco)))return setErrNovo("Informe um preço válido.");
+    if(!catFinal)return setErrNovo("Selecione ou crie uma categoria.");
+    if(cardapio.find(p=>p.nome.toLowerCase()===novoNome.trim().toLowerCase()))return setErrNovo("Já existe um produto com esse nome.");
+    const novo={cat:catFinal,nome:novoNome.trim(),preco:parseFloat(novoPreco),obs:novaObs.trim(),_extra:true};
+    setExtrasCardapio(prev=>[...prev,novo]);
+    setPrecos(prev=>({...prev,[novo.nome]:novo.preco}));
+    setNovoNome("");setNovoPreco("");setNovaCat("");setNovaObs("");setCatCustom("");setErrNovo("");
+    setSaved(true);setTimeout(()=>setSaved(false),2000);
+    setAba("precos");
+  };
+
+  const delExtra=(nome)=>{
+    if(!window.confirm(`Remover "${nome}" do cardápio?`))return;
+    setExtrasCardapio(prev=>prev.filter(p=>p.nome!==nome));
+    setPrecos(prev=>{const n={...prev};delete n[nome];return n;});
+  };
+
+  return(
+    <>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:12}}>
+        <div>
+          <h2 style={{margin:0,fontSize:20,color:RE}}>🍫 Cardápio & Preços</h2>
+          <p style={{margin:"4px 0 0",fontSize:12,color:"#aaa"}}>{cardapio.length} produto(s) · {(extrasCardapio||[]).length} adicionado(s) por você</p>
+        </div>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+          {saved&&<span style={{fontSize:12,color:VE,fontWeight:700}}>✅ Salvo!</span>}
+          <button onClick={()=>setAba(aba==="novo"?"precos":"novo")} style={{padding:"8px 16px",borderRadius:22,border:`2px solid ${aba==="novo"?RE:RM}`,background:aba==="novo"?RE:"#fff",color:aba==="novo"?"#fff":RE,fontSize:12,fontWeight:700,cursor:"pointer"}}>
+            {aba==="novo"?"← Voltar":"＋ Novo Produto"}
+          </button>
+        </div>
+      </div>
+
+      {aba==="novo"&&(
+        <div style={{background:"#fff",borderRadius:18,padding:24,boxShadow:"0 4px 24px rgba(180,48,74,.10)",marginBottom:20,border:`2px solid ${RM}`}}>
+          <h3 style={{margin:"0 0 18px",color:RE,fontSize:16}}>✨ Adicionar novo produto ao cardápio</h3>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
+            <div style={{gridColumn:"1/-1"}}>
+              <label style={{fontSize:10,color:"#aaa",display:"block",marginBottom:4,textTransform:"uppercase",letterSpacing:1}}>Nome do produto *</label>
+              <input value={novoNome} onChange={e=>setNovoNome(e.target.value)} placeholder="Ex: Ovo Recheado Especial 300g" style={{width:"100%",padding:"10px 14px",borderRadius:10,border:`1.5px solid ${RM}`,fontSize:13,outline:"none",boxSizing:"border-box"}}/>
+            </div>
+            <div>
+              <label style={{fontSize:10,color:"#aaa",display:"block",marginBottom:4,textTransform:"uppercase",letterSpacing:1}}>Preço (R$) *</label>
+              <div style={{display:"flex",alignItems:"center",gap:6,padding:"9px 12px",borderRadius:10,border:`1.5px solid ${RM}`,background:RC}}>
+                <span style={{color:"#aaa",fontSize:12}}>R$</span>
+                <input type="number" step="0.01" min="0" value={novoPreco} onChange={e=>setNovoPreco(e.target.value)} placeholder="0,00" style={{flex:1,border:"none",background:"transparent",fontSize:14,fontWeight:700,color:RE,outline:"none"}}/>
+              </div>
+            </div>
+            <div>
+              <label style={{fontSize:10,color:"#aaa",display:"block",marginBottom:4,textTransform:"uppercase",letterSpacing:1}}>Observação / Sabores</label>
+              <input value={novaObs} onChange={e=>setNovaObs(e.target.value)} placeholder="Ex: Disponível em 3 sabores" style={{width:"100%",padding:"10px 14px",borderRadius:10,border:`1.5px solid ${RM}`,fontSize:13,outline:"none",boxSizing:"border-box"}}/>
+            </div>
+            <div style={{gridColumn:"1/-1"}}>
+              <label style={{fontSize:10,color:"#aaa",display:"block",marginBottom:4,textTransform:"uppercase",letterSpacing:1}}>Categoria *</label>
+              <select value={novaCat} onChange={e=>setNovaCat(e.target.value)} style={{width:"100%",padding:"10px 14px",borderRadius:10,border:`1.5px solid ${RM}`,fontSize:13,outline:"none",color:novaCat?"#333":"#aaa",background:"#fff",marginBottom:8}}>
+                <option value="">— Selecione uma categoria —</option>
+                {[...catsBase,...catsExtras.filter(c=>!catsBase.includes(c))].map(c=><option key={c} value={c}>{c}</option>)}
+                <option value="__nova__">✨ Criar nova categoria...</option>
+              </select>
+              {novaCat==="__nova__"&&(
+                <input value={catCustom} onChange={e=>setCatCustom(e.target.value)} placeholder="Nome da nova categoria" style={{width:"100%",padding:"10px 14px",borderRadius:10,border:`1.5px solid ${AM}`,fontSize:13,outline:"none",boxSizing:"border-box",background:"#fffbe6"}}/>
+              )}
+            </div>
+          </div>
+          {errNovo&&<div style={{background:"#fff0f0",border:"1.5px solid #e07070",borderRadius:10,padding:"10px 14px",fontSize:12,color:"#e05555",marginBottom:12}}>⚠️ {errNovo}</div>}
+          {novoNome&&novoPreco&&catFinal&&(
+            <div style={{background:RC,borderRadius:12,padding:"12px 14px",marginBottom:14,border:`1.5px solid ${RM}`}}>
+              <div style={{fontSize:10,color:"#aaa",marginBottom:6,textTransform:"uppercase",letterSpacing:1}}>👁 Preview</div>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <div><div style={{fontWeight:700,fontSize:14}}>{novoNome}</div>{novaObs&&<div style={{fontSize:11,color:"#aaa",marginTop:2}}>{novaObs}</div>}<div style={{fontSize:11,color:ROSA,marginTop:2}}>📂 {catFinal}</div></div>
+                <div style={{fontSize:18,fontWeight:700,color:RE}}>{fmt(parseFloat(novoPreco)||0)}</div>
+              </div>
+            </div>
+          )}
+          <div style={{display:"flex",gap:8}}>
+            <button onClick={addProduto} style={{flex:1,padding:13,borderRadius:12,border:"none",background:`linear-gradient(135deg,${RE},${ROSA})`,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer"}}>✅ Adicionar ao cardápio</button>
+            <button onClick={()=>{setNovoNome("");setNovoPreco("");setNovaCat("");setNovaObs("");setCatCustom("");setErrNovo("");}} style={{padding:"13px 16px",borderRadius:12,border:`1.5px solid ${RM}`,background:"#fff",color:"#aaa",fontSize:13,cursor:"pointer"}}>🗑️</button>
+          </div>
+        </div>
+      )}
+
+      {aba==="precos"&&(<>
+        <div style={{display:"flex",gap:6,alignItems:"center",background:"#fff",borderRadius:12,padding:"8px 14px",border:`1.5px solid ${RM}`,marginBottom:12,flexWrap:"wrap"}}>
+          <span style={{fontSize:12,color:"#888"}}>Reajuste filtro:</span>
+          {[-10,-5,5,10].map(p=>(
+            <button key={p} onClick={()=>reaj(p)} style={{padding:"4px 10px",borderRadius:8,border:"1.5px solid",borderColor:p<0?"#e07070":VE,background:p<0?"#fff5f4":"#eaf5f1",color:p<0?"#e07070":VE,fontSize:11,fontWeight:700,cursor:"pointer"}}>{p>0?"+":""}{p}%</button>
+          ))}
+          <button onClick={resetFil} style={{padding:"4px 10px",borderRadius:8,border:`1.5px solid ${RM}`,background:"#fff",color:"#aaa",fontSize:11,cursor:"pointer"}}>↩️ Original</button>
+        </div>
+        <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
+          <input value={busca} onChange={e=>setBusca(e.target.value)} placeholder="🔍 Buscar produto..." style={{padding:"8px 14px",borderRadius:10,border:`1.5px solid ${RM}`,fontSize:13,outline:"none",minWidth:200,flex:1}}/>
+          <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+            {todasCats.map(c=>(
+              <button key={c} onClick={()=>setCatF(c)} style={{padding:"5px 12px",borderRadius:20,border:"2px solid",borderColor:catF===c?RE:"#f0dde4",background:catF===c?RE:"#fff",color:catF===c?"#fff":"#888",fontSize:11,fontWeight:700,cursor:"pointer"}}>{c}</button>
+            ))}
+          </div>
+        </div>
+        {[...catsBase,...catsExtras.filter(c=>!catsBase.includes(c))].filter(cat=>catF==="Todas"||catF===cat).map(cat=>{
+          const items=fil.filter(p=>p.cat===cat);
+          if(!items.length)return null;
+          const temExtras=items.some(p=>(extrasCardapio||[]).find(e=>e.nome===p.nome));
+          return(
+            <div key={cat} style={{background:"#fff",borderRadius:16,marginBottom:14,overflow:"hidden",boxShadow:"0 2px 12px rgba(180,48,74,.07)"}}>
+              <div style={{background:temExtras?"linear-gradient(135deg,#7a5c9b,#b07ad4)":`linear-gradient(135deg,${RE},${ROSA})`,padding:"11px 18px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <span style={{color:"#fff",fontWeight:700,fontSize:14}}>{cat}{temExtras?" ✨":""}</span>
+                <span style={{color:"rgba(255,255,255,.7)",fontSize:11}}>{items.length} produto(s)</span>
+              </div>
+              {items.map((p,i)=>{
+                const isExtra=!!(extrasCardapio||[]).find(e=>e.nome===p.nome);
+                const orig=CAD_BASE.find(x=>x.nome===p.nome)?.preco;
+                const alt=!isExtra&&orig&&p.preco!==orig;
+                return(
+                  <div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 18px",borderBottom:i<items.length-1?"1px solid #fce4ec":"none",gap:12,background:isExtra?"#f5f0ff":alt?"#fffbe6":"#fff"}}>
+                    <div style={{flex:1}}>
+                      <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
+                        <span style={{fontSize:13,fontWeight:600}}>{p.nome}</span>
+                        {isExtra&&<span style={{padding:"1px 7px",borderRadius:20,background:"#ede0ff",color:"#7a5c9b",fontSize:10,fontWeight:700}}>✨ novo</span>}
+                      </div>
+                      {p.obs&&<div style={{fontSize:11,color:"#aaa",marginTop:1}}>{p.obs}</div>}
+                      {alt&&<div style={{fontSize:10,color:AM}}>Original: {fmt(orig||0)}</div>}
+                    </div>
+                    <div style={{display:"flex",alignItems:"center",gap:8}}>
+                      <div style={{display:"flex",alignItems:"center",gap:4,background:isExtra?"#ede0ff":RC,borderRadius:10,padding:"6px 12px",border:`1.5px solid ${isExtra?"#c4a0e8":RM}`}}>
+                        <span style={{fontSize:12,color:"#aaa"}}>R$</span>
+                        <input type="number" step="0.01" min="0" defaultValue={p.preco} key={p.preco} onBlur={e=>upd(p.nome,e.target.value)} style={{width:70,border:"none",background:"transparent",fontSize:14,fontWeight:700,color:isExtra?"#7a5c9b":RE,outline:"none",textAlign:"right"}}/>
+                      </div>
+                      {alt&&!isExtra&&<button onClick={()=>{if(orig)setPrecos(prev=>({...prev,[p.nome]:orig}));}} style={{padding:"4px 8px",borderRadius:8,border:"1.5px solid #f0dde4",background:"#fff",color:"#aaa",fontSize:11,cursor:"pointer"}}>↩️</button>}
+                      {isExtra&&<button onClick={()=>delExtra(p.nome)} style={{padding:"4px 8px",borderRadius:8,border:"1.5px solid #ffd0cc",background:"#fff5f4",color:"#e07070",fontSize:13,cursor:"pointer"}}>🗑️</button>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
+      </>)}
+    </>
+  );
 }
+
 
 function PagBtn({order,onUpdate}){
   const[modo,setModo]=useState(null);const[ent,setEnt]=useState(order.entrada||"");
@@ -301,8 +457,9 @@ function App(){
   const[filtroValMin,setFiltroValMin]=useState("");
   const[filtroValMax,setFiltroValMax]=useState("");
   const[filtroPago,setFiltroPago]=useState("todos");
+  const[extrasCardapio,setExtrasCardapio]=useState([]);
 
-  const cardapio=useMemo(()=>CAD_BASE.map(p=>({...p,preco:precos[p.nome]??p.preco})),[precos]);
+  const cardapio=useMemo(()=>[...CAD_BASE.map(p=>({...p,preco:precos[p.nome]??p.preco})),...(extrasCardapio||[]).map(p=>({...p,preco:precos[p.nome]??p.preco}))],[precos,extrasCardapio]);
   const showToast=(msg,type="ok")=>{setToast({msg,type});setTimeout(()=>setToast(null),3000);};
   const persist=async n=>{setSaving(true);await apiSave(n);setSaving(false);};
   const saveOrder=async data=>{let n;if(data.id){n=orders.map(x=>x.id===data.id?{...x,...data}:x);showToast("Atualizado! 💾");}else{const novo={...data,id:nextId,status:"pendente",pago:false,pagoParcial:false,entrada:0};n=[novo,...orders];setNextId(i=>i+1);showToast("Pedido criado! 🎂");}setOrders(n);setForm(null);await persist(n);};
@@ -345,7 +502,7 @@ function App(){
             <div><div style={{fontSize:20,fontWeight:"bold",fontStyle:"italic",color:"#fff",letterSpacing:1}}>Celina's Cake</div><div style={{fontSize:9,letterSpacing:3,color:"rgba(255,255,255,.6)",textTransform:"uppercase"}}>🐣 Páscoa 2026 · {saving?"💾 salvando...":"✓ salvo"}</div></div>
           </div>
           <nav style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-            {[["dashboard","📊 Painel"],["whatsapp","💬 WhatsApp"],["pedidos","📋 Pedidos"],["cardapio","🍫 Cardápio"],["precos","💲 Preços"]].map(([v,l])=>(
+            {[["dashboard","📊 Painel"],["whatsapp","💬 WhatsApp"],["pedidos","📋 Pedidos"],["cardapio","🍫 Cardápio"],["precos","💲 & Preços"]].map(([v,l])=>(
               <button key={v} onClick={()=>setView(v)} style={{padding:"7px 15px",borderRadius:20,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,background:view===v?"#fff":"rgba(255,255,255,.2)",color:view===v?RE:"#fff"}}>{l}</button>
             ))}
           </nav>
@@ -356,7 +513,7 @@ function App(){
         {atrasados.length>0&&(<div style={{background:"#fff0f0",border:"2px solid #e05555",borderRadius:16,padding:"14px 18px",marginBottom:20}}><div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}><span style={{fontSize:22}}>🚨</span><div style={{fontWeight:700,color:"#e05555",fontSize:15}}>{atrasados.length} pedido(s) atrasado(s)!</div></div>{atrasados.map(o=>(<div key={o.id} style={{background:"#fff",borderRadius:10,padding:"10px 14px",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",borderLeft:"4px solid #e05555",marginBottom:6}}><div style={{flex:1}}><span style={{fontWeight:700,fontSize:13}}>{o.cliente}</span><span style={{fontSize:12,color:"#aaa",marginLeft:8}}>{o.itens}</span></div><span style={{fontSize:11,color:"#e05555",fontWeight:700}}>{Math.abs(getDias(o.data_retirada,agora))}d atrasado</span><button onClick={()=>updSt(o.id,"entregue")} style={{padding:"4px 10px",borderRadius:8,border:"none",background:"#e05555",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer"}}>Marcar entregue</button></div>))}</div>)}
 
         {view==="whatsapp"&&<WhatsAppPage onSave={saveOrder}/>}
-        {view==="precos"&&<PrecosPage cardapio={cardapio} precos={precos} setPrecos={setPrecos}/>}
+        {view==="precos"&&<PrecosPage cardapio={cardapio} precos={precos} setPrecos={setPrecos} extrasCardapio={extrasCardapio} setExtrasCardapio={setExtrasCardapio}/>}
 
         {view==="dashboard"&&(<>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(175px,1fr))",gap:14,marginBottom:24}}>
