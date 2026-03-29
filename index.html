@@ -695,15 +695,23 @@ function App(){
       parseItens(o.itens).forEach(({nome,qty})=>addQtd(nome,qty,o.status));
     });
     return Object.values(m)
-      .map(p=>({
-        ...p,
-        // falta = tudo que não está pronto nem entregue
-        falta:Math.max(0,p.total-p.pronto-p.entregue),
-        // progresso %
-        pct:p.total>0?Math.round((p.pronto+p.entregue)/p.total*100):0
-      }))
+      .map(p=>{
+        const key=p.nome.toLowerCase().trim();
+        const jaFeito=parseInt(produzido[key])||0;
+        // jaFeito soma com pronto dos pedidos marcados
+        const prontoReal=Math.min(p.pronto+jaFeito, p.total-p.entregue);
+        const falta=Math.max(0,p.total-prontoReal-p.entregue);
+        const pct=p.total>0?Math.round((prontoReal+p.entregue)/p.total*100):0;
+        return{
+          ...p,
+          prontoReal,
+          jaFeito,
+          falta,
+          pct
+        };
+      })
       .sort((a,b)=>b.falta-a.falta||b.total-a.total);
-  },[orders]);
+  },[orders,produzido]);
 
   const cats=["Todas",...Array.from(new Set(cardapio.map(p=>p.cat)))];
 
@@ -748,7 +756,7 @@ function App(){
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))",gap:12,marginBottom:24}}>
               {[
                 {label:"Total pedido",value:producaoData.reduce((s,p)=>s+p.total,0),icon:"🥚",color:ROSA,bg:"#fff0f5"},
-                {label:"✅ Prontos",value:producaoData.reduce((s,p)=>s+p.pronto,0),icon:"✅",color:VE,bg:"#eaf5f1"},
+                {label:"✅ Prontos",value:producaoData.reduce((s,p)=>s+p.prontoReal,0),icon:"✅",color:VE,bg:"#eaf5f1"},
                 {label:"🎁 Entregues",value:producaoData.reduce((s,p)=>s+p.entregue,0),icon:"🎁",color:"#888",bg:"#f5f5f5"},
                 {label:"⚠️ Falta",value:producaoData.reduce((s,p)=>s+p.falta,0),icon:"⚠️",color:RE,bg:RC},
               ].map((c,i)=>(
@@ -760,7 +768,7 @@ function App(){
               ))}
             </div>
             <div style={{background:"#fff",borderRadius:18,overflow:"hidden",boxShadow:"0 2px 14px rgba(180,48,74,.07)"}}>
-              <div style={{background:`linear-gradient(135deg,${RE},${ROSA})`,padding:"12px 18px",display:"grid",gridTemplateColumns:"1fr 55px 55px 55px 60px 70px 80px",gap:6,alignItems:"center"}}>
+              <div style={{background:`linear-gradient(135deg,${RE},${ROSA})`,padding:"12px 18px",display:"grid",gridTemplateColumns:"1fr 55px 55px 55px 60px 70px 90px 80px",gap:6,alignItems:"center"}}>
                 {["🥚 Produto","Total","Pend.","Prod.","Pronto","Entregue","👩‍🍳 Já prod.","⚠️ Falta"].map((h,i)=>(
                   <div key={i} style={{color:"#fff",fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:.5,textAlign:i===0?"left":"center"}}>{h}</div>
                 ))}
@@ -769,7 +777,7 @@ function App(){
                 <div style={{padding:"40px 0",textAlign:"center",color:"#ccc",fontSize:13}}>Nenhum pedido ainda</div>
               ):(
                 producaoData.map((p,i)=>(
-                  <div key={i} style={{display:"grid",gridTemplateColumns:"1fr 55px 55px 55px 60px 70px 80px",gap:6,alignItems:"center",padding:"11px 18px",borderBottom:"1px solid #fce4ec",background:i%2===0?"#fff":"#fdf4f6",borderLeft:`4px solid ${p.falta===0?VE:p.pct>=50?AM:RE}`}}>
+                  <div key={i} style={{display:"grid",gridTemplateColumns:"1fr 55px 55px 55px 60px 70px 90px 80px",gap:6,alignItems:"center",padding:"11px 18px",borderBottom:"1px solid #fce4ec",background:i%2===0?"#fff":"#fdf4f6",borderLeft:`4px solid ${p.falta===0?VE:p.pct>=50?AM:RE}`}}>
                     <div>
                       <div style={{fontSize:12,fontWeight:600,color:"#333"}}>{p.nome}</div>
                       <div style={{marginTop:4,height:5,borderRadius:4,background:"#f0dde4",overflow:"hidden"}}>
@@ -780,7 +788,7 @@ function App(){
                     <div style={{textAlign:"center",fontWeight:700,fontSize:13,color:"#555"}}>{p.total}</div>
                     <div style={{textAlign:"center",fontSize:12,color:p.pendente>0?"#e8b86d":"#ccc",fontWeight:p.pendente>0?700:400}}>{p.pendente||"—"}</div>
                     <div style={{textAlign:"center",fontSize:12,color:p.emProducao>0?ROSA:"#ccc",fontWeight:p.emProducao>0?700:400}}>{p.emProducao||"—"}</div>
-                    <div style={{textAlign:"center",fontSize:12,color:p.pronto>0?VE:"#ccc",fontWeight:p.pronto>0?700:400}}>{p.pronto||"—"}</div>
+                    <div style={{textAlign:"center",fontSize:12,color:p.prontoReal>0?VE:"#ccc",fontWeight:p.prontoReal>0?700:400}}>{p.prontoReal||"—"}</div>
                     <div style={{textAlign:"center",fontSize:12,color:p.entregue>0?"#888":"#ccc",fontWeight:p.entregue>0?700:400}}>{p.entregue||"—"}</div>
                     <div style={{textAlign:"center"}}>
                       <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>
@@ -800,12 +808,12 @@ function App(){
                 ))
               )}
               {producaoData.length>0&&(
-                <div style={{display:"grid",gridTemplateColumns:"1fr 55px 55px 55px 60px 70px 80px",gap:6,alignItems:"center",padding:"12px 18px",background:RC,borderTop:`2px solid ${RM}`}}>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 55px 55px 55px 60px 70px 90px 80px",gap:6,alignItems:"center",padding:"12px 18px",background:RC,borderTop:`2px solid ${RM}`}}>
                   <div style={{fontSize:11,fontWeight:700,color:RE}}>TOTAL GERAL</div>
                   <div style={{textAlign:"center",fontWeight:700,fontSize:13,color:RE}}>{producaoData.reduce((s,p)=>s+p.total,0)}</div>
                   <div style={{textAlign:"center",fontWeight:700,fontSize:12,color:"#e8b86d"}}>{producaoData.reduce((s,p)=>s+p.pendente,0)||"—"}</div>
                   <div style={{textAlign:"center",fontWeight:700,fontSize:12,color:ROSA}}>{producaoData.reduce((s,p)=>s+p.emProducao,0)||"—"}</div>
-                  <div style={{textAlign:"center",fontWeight:700,fontSize:12,color:VE}}>{producaoData.reduce((s,p)=>s+p.pronto,0)||"—"}</div>
+                  <div style={{textAlign:"center",fontWeight:700,fontSize:12,color:VE}}>{producaoData.reduce((s,p)=>s+p.prontoReal,0)||"—"}</div>
                   <div style={{textAlign:"center",fontWeight:700,fontSize:12,color:"#888"}}>{producaoData.reduce((s,p)=>s+p.entregue,0)||"—"}</div>
                   <div style={{textAlign:"center",fontWeight:700,fontSize:12,color:RE}}>{Object.values(produzido).reduce((s,v)=>s+(parseInt(v)||0),0)||"—"}</div>
                   <div style={{textAlign:"center"}}>{producaoData.reduce((s,p)=>s+p.falta,0)===0?<span style={{padding:"3px 10px",borderRadius:20,background:"#eaf5f1",color:VE,fontSize:11,fontWeight:700}}>✅ OK</span>:<span style={{padding:"3px 10px",borderRadius:20,background:RC,color:RE,fontSize:12,fontWeight:700}}>{producaoData.reduce((s,p)=>s+p.falta,0)} un.</span>}</div>
