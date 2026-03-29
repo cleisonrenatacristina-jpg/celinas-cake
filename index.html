@@ -476,6 +476,78 @@ function FormModal({initial,onSave,onClose,cardapio}){
         <button onClick={handleSave} style={{width:"100%",padding:13,borderRadius:12,border:"none",background:`linear-gradient(135deg,${RE},${ROSA})`,color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer",marginTop:4}}>💾 Salvar {total>0&&`— ${fmt(total)}`}</button></div></div>);
 }
 
+
+function CalendarioEntregas({orders,agora,calendarDate,setCalendarDate,setCalendarModal,getDias,getPrazo,getBadge}){
+  const ano=calendarDate.getFullYear();
+  const mes=calendarDate.getMonth();
+  const primeiroDia=new Date(ano,mes,1).getDay();
+  const diasNoMes=new Date(ano,mes+1,0).getDate();
+  const nomeMes=calendarDate.toLocaleDateString("pt-BR",{month:"long",year:"numeric"});
+  const pedidosPorDia={};
+  orders.forEach(o=>{
+    if(o.data_retirada){
+      if(!pedidosPorDia[o.data_retirada])pedidosPorDia[o.data_retirada]=[];
+      pedidosPorDia[o.data_retirada].push(o);
+    }
+  });
+  const dias=[];
+  for(let i=0;i<primeiroDia;i++)dias.push(null);
+  for(let d=1;d<=diasNoMes;d++)dias.push(d);
+  return(
+    <div style={{background:"#fff",borderRadius:18,padding:20,boxShadow:"0 2px 14px rgba(180,48,74,.07)"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:8}}>
+        <h3 style={{margin:0,fontSize:14,color:RE}}>📅 Calendário de Entregas</h3>
+        <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+          <button onClick={()=>setCalendarDate(new Date(ano,mes-1,1))} style={{padding:"4px 12px",borderRadius:20,border:`1.5px solid ${RM}`,background:"#fff",color:RE,fontWeight:700,fontSize:14,cursor:"pointer"}}>‹</button>
+          <span style={{fontSize:13,fontWeight:700,color:"#555",textTransform:"capitalize",minWidth:140,textAlign:"center"}}>{nomeMes}</span>
+          <button onClick={()=>setCalendarDate(new Date(ano,mes+1,1))} style={{padding:"4px 12px",borderRadius:20,border:`1.5px solid ${RM}`,background:"#fff",color:RE,fontWeight:700,fontSize:14,cursor:"pointer"}}>›</button>
+          <button onClick={()=>setCalendarDate(new Date())} style={{padding:"4px 10px",borderRadius:20,border:`1.5px solid ${RM}`,background:RC,color:RE,fontWeight:700,fontSize:11,cursor:"pointer"}}>Hoje</button>
+        </div>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2,marginBottom:4}}>
+        {["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"].map(d=>(
+          <div key={d} style={{textAlign:"center",fontSize:10,fontWeight:700,color:"#aaa",padding:"4px 0"}}>{d}</div>
+        ))}
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:3}}>
+        {dias.map((d,i)=>{
+          if(!d)return <div key={i}/>;
+          const dateStr=`${ano}-${String(mes+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+          const ps=pedidosPorDia[dateStr]||[];
+          const isHoje=d===agora.getDate()&&mes===agora.getMonth()&&ano===agora.getFullYear();
+          const temAtrasado=ps.some(o=>o.status!=="entregue"&&getDias(o.data_retirada,agora)<0);
+          const todosEntregues=ps.length>0&&ps.every(o=>o.status==="entregue");
+          const bgDia=temAtrasado?"#fff0f0":todosEntregues?"#eaf5f1":ps.length>0?RC:"transparent";
+          const borderDia=temAtrasado?"#e05555":todosEntregues?VE:ps.length>0?RE:"transparent";
+          return(
+            <div key={i} onClick={()=>ps.length>0&&setCalendarModal(dateStr)}
+              style={{minHeight:52,borderRadius:10,padding:"5px 4px",background:bgDia,border:`2px solid ${isHoje?RE:borderDia}`,cursor:ps.length>0?"pointer":"default",position:"relative"}}>
+              <div style={{fontSize:11,fontWeight:isHoje?700:400,color:isHoje?RE:"#555",textAlign:"right",paddingRight:3}}>{d}</div>
+              {ps.length>0&&(
+                <div style={{display:"flex",flexWrap:"wrap",gap:2,marginTop:2,paddingLeft:2}}>
+                  {ps.slice(0,4).map((o,oi)=>(
+                    <div key={oi} style={{width:8,height:8,borderRadius:"50%",background:o.status==="entregue"?"#888":o.status==="pronto"?VE:o.status==="em_producao"?ROSA:AM}}/>
+                  ))}
+                  {ps.length>4&&<div style={{fontSize:8,color:RE,fontWeight:700}}>+{ps.length-4}</div>}
+                </div>
+              )}
+              {ps.length>0&&<div style={{position:"absolute",bottom:3,right:4,fontSize:9,fontWeight:700,color:temAtrasado?"#e05555":todosEntregues?"#888":RE}}>{ps.length}</div>}
+            </div>
+          );
+        })}
+      </div>
+      <div style={{display:"flex",gap:12,marginTop:12,flexWrap:"wrap"}}>
+        {[{c:AM,l:"Pendente"},{c:ROSA,l:"Em produção"},{c:VE,l:"Pronto"},{c:"#888",l:"Entregue"},{c:"#e05555",l:"Atrasado"}].map((x,i)=>(
+          <div key={i} style={{display:"flex",alignItems:"center",gap:4,fontSize:10,color:"#aaa"}}>
+            <div style={{width:8,height:8,borderRadius:"50%",background:x.c}}/>
+            {x.l}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function App(){
   const[view,setView]=useState("pedidos");
   const[orders,setOrders]=useState([]);
@@ -739,81 +811,7 @@ function App(){
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18,marginBottom:18}}>
             {[{t:"🏆 Qtd. por Produto",c:<ResponsiveContainer width="100%" height={340}><BarChart data={prodData} layout="vertical" margin={{left:0,right:16}}><XAxis type="number" tick={{fontSize:10}}/><YAxis type="category" dataKey="name" tick={{fontSize:9}} width={150}/><Tooltip formatter={v=>[`${v} unid.`]}/><Bar dataKey="qty" radius={[0,8,8,0]}>{prodData.map((_,i)=><Cell key={i} fill={PAL[i%PAL.length]}/>)}</Bar></BarChart></ResponsiveContainer>},{t:"📌 Status",c:<ResponsiveContainer width="100%" height={200}><PieChart><Pie data={stData} cx="50%" cy="50%" innerRadius={50} outerRadius={85} paddingAngle={4} dataKey="value" label={({name,value})=>`${name}: ${value}`} labelLine={false}>{stData.map((d,i)=><Cell key={i} fill={d.color}/>)}</Pie><Tooltip/></PieChart></ResponsiveContainer>},{t:"📈 Faturamento por Mês",c:<ResponsiveContainer width="100%" height={200}><BarChart data={fatData}><CartesianGrid strokeDasharray="3 3" stroke="#fce4ec"/><XAxis dataKey="mes" tick={{fontSize:11}}/><YAxis tick={{fontSize:11}} tickFormatter={v=>`R$${v}`}/><Tooltip formatter={(v,n)=>[fmt(v),n==="recebido"?"Recebido":"A Receber"]}/><Legend formatter={v=>v==="recebido"?"Recebido":"A Receber"}/><Bar dataKey="recebido" fill={VE} radius={[6,6,0,0]}/><Bar dataKey="aReceber" fill={AM} radius={[6,6,0,0]}/></BarChart></ResponsiveContainer>},{t:"💵 Receita por Produto",c:<ResponsiveContainer width="100%" height={340}><BarChart data={valData} layout="vertical" margin={{left:0,right:16}}><XAxis type="number" tick={{fontSize:10}} tickFormatter={v=>`R$${v}`}/><YAxis type="category" dataKey="name" tick={{fontSize:9}} width={150}/><Tooltip formatter={v=>[fmt(v)]}/><Bar dataKey="total" radius={[0,8,8,0]}>{valData.map((_,i)=><Cell key={i} fill={PAL[i%PAL.length]}/>)}</Bar></BarChart></ResponsiveContainer>}].map((c,i)=>(<div key={i} style={{background:"#fff",borderRadius:18,padding:20,boxShadow:"0 2px 14px rgba(180,48,74,.07)"}}><h3 style={{margin:"0 0 14px",fontSize:14,color:RE}}>{c.t}</h3>{c.c}</div>))}
           </div>
-          (()=>{
-            const ano=calendarDate.getFullYear();
-            const mes=calendarDate.getMonth();
-            const primeiroDia=new Date(ano,mes,1).getDay();
-            const diasNoMes=new Date(ano,mes+1,0).getDate();
-            const hoje=agora;
-            const nomeMes=calendarDate.toLocaleDateString("pt-BR",{month:"long",year:"numeric"});
-            // Map de data -> pedidos
-            const pedidosPorDia={};
-            orders.forEach(o=>{
-              if(o.data_retirada){
-                const k=o.data_retirada;
-                if(!pedidosPorDia[k])pedidosPorDia[k]=[];
-                pedidosPorDia[k].push(o);
-              }
-            });
-            const dias=[];
-            for(let i=0;i<primeiroDia;i++)dias.push(null);
-            for(let d=1;d<=diasNoMes;d++)dias.push(d);
-            return(
-              <div style={{background:"#fff",borderRadius:18,padding:20,boxShadow:"0 2px 14px rgba(180,48,74,.07)"}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-                  <h3 style={{margin:0,fontSize:14,color:RE}}>📅 Calendário de Entregas</h3>
-                  <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                    <button onClick={()=>setCalendarDate(new Date(ano,mes-1,1))} style={{padding:"4px 12px",borderRadius:20,border:`1.5px solid ${RM}`,background:"#fff",color:RE,fontWeight:700,fontSize:14,cursor:"pointer"}}>‹</button>
-                    <span style={{fontSize:13,fontWeight:700,color:"#555",textTransform:"capitalize"}}>{nomeMes}</span>
-                    <button onClick={()=>setCalendarDate(new Date(ano,mes+1,1))} style={{padding:"4px 12px",borderRadius:20,border:`1.5px solid ${RM}`,background:"#fff",color:RE,fontWeight:700,fontSize:14,cursor:"pointer"}}>›</button>
-                    <button onClick={()=>setCalendarDate(new Date())} style={{padding:"4px 10px",borderRadius:20,border:`1.5px solid ${RM}`,background:RC,color:RE,fontWeight:700,fontSize:11,cursor:"pointer"}}>Hoje</button>
-                  </div>
-                </div>
-                <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2,marginBottom:4}}>
-                  {["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"].map(d=>(
-                    <div key={d} style={{textAlign:"center",fontSize:10,fontWeight:700,color:"#aaa",padding:"4px 0"}}>{d}</div>
-                  ))}
-                </div>
-                <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:3}}>
-                  {dias.map((d,i)=>{
-                    if(!d)return<div key={i}/>;
-                    const dateStr=`${ano}-${String(mes+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
-                    const ps=pedidosPorDia[dateStr]||[];
-                    const isHoje=d===hoje.getDate()&&mes===hoje.getMonth()&&ano===hoje.getFullYear();
-                    const temEntrega=ps.length>0;
-                    const temAtrasado=ps.some(o=>o.status!=="entregue"&&getDias(o.data_retirada,agora)<0);
-                    const todosEntregues=ps.length>0&&ps.every(o=>o.status==="entregue");
-                    const bgDia=temAtrasado?"#fff0f0":todosEntregues?"#eaf5f1":temEntrega?RC:"transparent";
-                    const borderDia=temAtrasado?"#e05555":todosEntregues?VE:temEntrega?RE:"transparent";
-                    return(
-                      <div key={i} onClick={()=>ps.length>0&&setCalendarModal(dateStr)}
-                        style={{minHeight:52,borderRadius:10,padding:"5px 4px",background:bgDia,border:`2px solid ${isHoje?RE:borderDia}`,cursor:ps.length>0?"pointer":"default",position:"relative",transition:"opacity .15s"}}
-                      >
-                        <div style={{fontSize:11,fontWeight:isHoje?700:400,color:isHoje?RE:"#555",textAlign:"right",paddingRight:3}}>{d}</div>
-                        {ps.length>0&&(
-                          <div style={{display:"flex",flexWrap:"wrap",gap:2,marginTop:2}}>
-                            {ps.slice(0,3).map((o,oi)=>(
-                              <div key={oi} style={{width:8,height:8,borderRadius:"50%",background:o.status==="entregue"?"#888":o.status==="pronto"?VE:o.status==="em_producao"?ROSA:AM}}/>
-                            ))}
-                            {ps.length>3&&<div style={{fontSize:8,color:RE,fontWeight:700}}>+{ps.length-3}</div>}
-                          </div>
-                        )}
-                        {ps.length>0&&<div style={{position:"absolute",bottom:3,right:4,fontSize:9,fontWeight:700,color:temAtrasado?"#e05555":todosEntregues?"#888":RE}}>{ps.length}</div>}
-                      </div>
-                    );
-                  })}
-                </div>
-                <div style={{display:"flex",gap:12,marginTop:12,flexWrap:"wrap"}}>
-                  {[{c:AM,l:"Pendente"},{c:ROSA,l:"Em produção"},{c:VE,l:"Pronto"},{c:"#888",l:"Entregue"},{c:"#e05555",l:"Atrasado"}].map((x,i)=>(
-                    <div key={i} style={{display:"flex",alignItems:"center",gap:4,fontSize:10,color:"#aaa"}}>
-                      <div style={{width:8,height:8,borderRadius:"50%",background:x.c}}/>
-                      {x.l}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })()
+          <CalendarioEntregas orders={orders} agora={agora} calendarDate={calendarDate} setCalendarDate={setCalendarDate} setCalendarModal={setCalendarModal} getDias={getDias} getPrazo={getPrazo} getBadge={getBadge}/>
         </>)}
 
         {view==="cardapio"&&(<>
