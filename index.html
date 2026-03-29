@@ -526,35 +526,60 @@ function App(){
   const totalAReceber=orders.filter(o=>!o.pago&&!o.pagoParcial).reduce((s,o)=>s+(o.valor||0)+(o.frete||0),0)+orders.filter(o=>o.pagoParcial).reduce((s,o)=>s+((o.valor||0)+(o.frete||0)-(o.entrada||0)),0);
   const totalPendentes=orders.filter(o=>o.status==="pendente"||o.status==="em_producao").length;
   const totalProntos=orders.filter(o=>o.status==="pronto").length;
-  // Parseia itens considerando quantidade (ex: "3x Ovo Fatia" = 3 unidades)
+  // Parseia string de itens em lista [{nome, qty}]
+  // Suporta: "3x Produto", "3X Produto", "Produto" (qty=1), separador " + " ou "+"
   const parseItens=(itensStr)=>{
-    if(!itensStr)return[];
-    return itensStr.split("+").map(p=>p.trim()).filter(Boolean).map(p=>{
-      const m=p.match(/^(\d+)[xX]\s*(.+)$/);
-      return m?{nome:m[2].trim(),qty:parseInt(m[1])}:{nome:p.trim(),qty:1};
+    if(!itensStr||!itensStr.trim())return[];
+    // Normaliza separador: " + " ou "+" mas não dentro de parênteses
+    const partes=itensStr.split(/\s*\+\s*/);
+    return partes.map(p=>p.trim()).filter(Boolean).map(p=>{
+      // Formato "NxNome" ou "N x Nome" ou "NXNome"
+      const m=p.match(/^(\d+)\s*[xX]\s+(.+)$/) || p.match(/^(\d+)[xX](.+)$/);
+      if(m){
+        const qty=parseInt(m[1])||1;
+        const nome=m[2].trim();
+        return{nome,qty};
+      }
+      return{nome:p.trim(),qty:1};
     });
   };
+
+  // Agrupa produtos por nome canônico (ignora variações de capitalização e espaços)
+  const canonico=(nome)=>nome.toLowerCase().trim().replace(/\s+/g,' ');
+
   const prodData=useMemo(()=>{
-    const m={};
+    const m={};     // canonico -> {display, qty}
     orders.forEach(o=>{
       parseItens(o.itens).forEach(({nome,qty})=>{
-        m[nome]=(m[nome]||0)+qty;
+        const key=canonico(nome);
+        if(!m[key])m[key]={name:nome,qty:0};
+        m[key].qty+=qty;
       });
     });
-    return Object.entries(m).map(([name,qty])=>({name,qty})).sort((a,b)=>b.qty-a.qty).slice(0,12);
+    return Object.values(m)
+      .map(({name,qty})=>({name,qty}))
+      .sort((a,b)=>b.qty-a.qty)
+      .slice(0,15);
   },[orders]);
+
   const valData=useMemo(()=>{
     const m={};
     orders.forEach(o=>{
       const itens=parseItens(o.itens);
       if(!itens.length)return;
+      // Tenta pegar preço real do cardápio para cada item
       const totalQtd=itens.reduce((s,it)=>s+it.qty,0);
       const valorUnit=(o.valor||0)/Math.max(totalQtd,1);
       itens.forEach(({nome,qty})=>{
-        m[nome]=(m[nome]||0)+valorUnit*qty;
+        const key=canonico(nome);
+        if(!m[key])m[key]={name:nome,total:0};
+        m[key].total+=valorUnit*qty;
       });
     });
-    return Object.entries(m).map(([name,total])=>({name,total:parseFloat(total.toFixed(2))})).sort((a,b)=>b.total-a.total).slice(0,12);
+    return Object.values(m)
+      .map(({name,total})=>({name,total:parseFloat(total.toFixed(2))}))
+      .sort((a,b)=>b.total-a.total)
+      .slice(0,15);
   },[orders]);
   const stData=useMemo(()=>Object.entries(ST).map(([k,v])=>({name:v.label,value:orders.filter(o=>o.status===k).length,color:v.color})).filter(d=>d.value>0),[orders]);
   const fatData=useMemo(()=>{const m={};orders.forEach(o=>{const mm=o.data_retirada?o.data_retirada.slice(0,7):"?";if(!m[mm])m[mm]={mes:mm,recebido:0,aReceber:0};const total=(o.valor||0)+(o.frete||0);o.pago?m[mm].recebido+=total:m[mm].aReceber+=total;});return Object.values(m).sort((a,b)=>a.mes>b.mes?1:-1).map(d=>({...d,mes:d.mes==="?"?"?":new Date(d.mes+"-01").toLocaleDateString("pt-BR",{month:"short",year:"2-digit"})}));},[orders]);
@@ -596,7 +621,7 @@ function App(){
             {[{label:"Em Aberto",value:totalPendentes,icon:"⏳",color:"#e8b86d",bg:"#fdf6e3"},{label:"Prontos",value:totalProntos,icon:"✅",color:VE,bg:"#eaf5f1"},{label:"Recebido",value:fmt(totalRecebido),icon:"💰",color:VE,bg:"#eaf5f1"},{label:"A Receber",value:fmt(totalAReceber),icon:"⚠️",color:RE,bg:RC},{label:"Total",value:orders.length,icon:"🎂",color:ROSA,bg:"#fff0f5"}].map((c,i)=>(<div key={i} style={{background:c.bg,borderRadius:16,padding:"18px 16px",borderLeft:`4px solid ${c.color}`}}><div style={{fontSize:22}}>{c.icon}</div><div style={{fontSize:20,fontWeight:"bold",color:c.color,marginTop:4}}>{c.value}</div><div style={{fontSize:11,color:"#aaa",marginTop:2}}>{c.label}</div></div>))}
           </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18,marginBottom:18}}>
-            {[{t:"🏆 Qtd. por Produto",c:<ResponsiveContainer width="100%" height={200}><BarChart data={prodData} layout="vertical" margin={{left:0,right:16}}><XAxis type="number" tick={{fontSize:10}}/><YAxis type="category" dataKey="name" tick={{fontSize:9}} width={150}/><Tooltip formatter={v=>[`${v} unid.`]}/><Bar dataKey="qty" radius={[0,8,8,0]}>{prodData.map((_,i)=><Cell key={i} fill={PAL[i%PAL.length]}/>)}</Bar></BarChart></ResponsiveContainer>},{t:"📌 Status",c:<ResponsiveContainer width="100%" height={200}><PieChart><Pie data={stData} cx="50%" cy="50%" innerRadius={50} outerRadius={85} paddingAngle={4} dataKey="value" label={({name,value})=>`${name}: ${value}`} labelLine={false}>{stData.map((d,i)=><Cell key={i} fill={d.color}/>)}</Pie><Tooltip/></PieChart></ResponsiveContainer>},{t:"📈 Faturamento por Mês",c:<ResponsiveContainer width="100%" height={200}><BarChart data={fatData}><CartesianGrid strokeDasharray="3 3" stroke="#fce4ec"/><XAxis dataKey="mes" tick={{fontSize:11}}/><YAxis tick={{fontSize:11}} tickFormatter={v=>`R$${v}`}/><Tooltip formatter={(v,n)=>[fmt(v),n==="recebido"?"Recebido":"A Receber"]}/><Legend formatter={v=>v==="recebido"?"Recebido":"A Receber"}/><Bar dataKey="recebido" fill={VE} radius={[6,6,0,0]}/><Bar dataKey="aReceber" fill={AM} radius={[6,6,0,0]}/></BarChart></ResponsiveContainer>},{t:"💵 Receita por Produto",c:<ResponsiveContainer width="100%" height={200}><BarChart data={valData} layout="vertical" margin={{left:0,right:16}}><XAxis type="number" tick={{fontSize:10}} tickFormatter={v=>`R$${v}`}/><YAxis type="category" dataKey="name" tick={{fontSize:9}} width={150}/><Tooltip formatter={v=>[fmt(v)]}/><Bar dataKey="total" radius={[0,8,8,0]}>{valData.map((_,i)=><Cell key={i} fill={PAL[i%PAL.length]}/>)}</Bar></BarChart></ResponsiveContainer>}].map((c,i)=>(<div key={i} style={{background:"#fff",borderRadius:18,padding:20,boxShadow:"0 2px 14px rgba(180,48,74,.07)"}}><h3 style={{margin:"0 0 14px",fontSize:14,color:RE}}>{c.t}</h3>{c.c}</div>))}
+            {[{t:"🏆 Qtd. por Produto",c:<ResponsiveContainer width="100%" height={340}><BarChart data={prodData} layout="vertical" margin={{left:0,right:16}}><XAxis type="number" tick={{fontSize:10}}/><YAxis type="category" dataKey="name" tick={{fontSize:9}} width={150}/><Tooltip formatter={v=>[`${v} unid.`]}/><Bar dataKey="qty" radius={[0,8,8,0]}>{prodData.map((_,i)=><Cell key={i} fill={PAL[i%PAL.length]}/>)}</Bar></BarChart></ResponsiveContainer>},{t:"📌 Status",c:<ResponsiveContainer width="100%" height={200}><PieChart><Pie data={stData} cx="50%" cy="50%" innerRadius={50} outerRadius={85} paddingAngle={4} dataKey="value" label={({name,value})=>`${name}: ${value}`} labelLine={false}>{stData.map((d,i)=><Cell key={i} fill={d.color}/>)}</Pie><Tooltip/></PieChart></ResponsiveContainer>},{t:"📈 Faturamento por Mês",c:<ResponsiveContainer width="100%" height={200}><BarChart data={fatData}><CartesianGrid strokeDasharray="3 3" stroke="#fce4ec"/><XAxis dataKey="mes" tick={{fontSize:11}}/><YAxis tick={{fontSize:11}} tickFormatter={v=>`R$${v}`}/><Tooltip formatter={(v,n)=>[fmt(v),n==="recebido"?"Recebido":"A Receber"]}/><Legend formatter={v=>v==="recebido"?"Recebido":"A Receber"}/><Bar dataKey="recebido" fill={VE} radius={[6,6,0,0]}/><Bar dataKey="aReceber" fill={AM} radius={[6,6,0,0]}/></BarChart></ResponsiveContainer>},{t:"💵 Receita por Produto",c:<ResponsiveContainer width="100%" height={340}><BarChart data={valData} layout="vertical" margin={{left:0,right:16}}><XAxis type="number" tick={{fontSize:10}} tickFormatter={v=>`R$${v}`}/><YAxis type="category" dataKey="name" tick={{fontSize:9}} width={150}/><Tooltip formatter={v=>[fmt(v)]}/><Bar dataKey="total" radius={[0,8,8,0]}>{valData.map((_,i)=><Cell key={i} fill={PAL[i%PAL.length]}/>)}</Bar></BarChart></ResponsiveContainer>}].map((c,i)=>(<div key={i} style={{background:"#fff",borderRadius:18,padding:20,boxShadow:"0 2px 14px rgba(180,48,74,.07)"}}><h3 style={{margin:"0 0 14px",fontSize:14,color:RE}}>{c.t}</h3>{c.c}</div>))}
           </div>
           <div style={{background:"#fff",borderRadius:18,padding:20}}><h3 style={{margin:"0 0 14px",fontSize:14,color:RE}}>📅 Próximas Entregas</h3>{orders.filter(o=>o.status!=="entregue"&&o.data_retirada).sort((a,b)=>a.data_retirada>b.data_retirada?1:-1).slice(0,6).length===0?<div style={{color:"#ccc",fontSize:13}}>Nenhuma agendada</div>:orders.filter(o=>o.status!=="entregue"&&o.data_retirada).sort((a,b)=>a.data_retirada>b.data_retirada?1:-1).slice(0,6).map(o=>{const prazo=getPrazo(getDias(o.data_retirada,agora),o.status);const bp=getBadge(o);return(<div key={o.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:"1px solid #fce4ec",flexWrap:"wrap"}}><span style={{fontSize:18}}>{ST[o.status]?.icon}</span><div style={{flex:1}}><div style={{fontWeight:700,fontSize:13}}>{o.cliente}</div><div style={{fontSize:11,color:"#aaa"}}>{o.itens}</div></div><div style={{fontSize:12,color:RE,fontWeight:700}}>{new Date(o.data_retirada+"T12:00").toLocaleDateString("pt-BR")}</div>{prazo&&<span style={{padding:"2px 8px",borderRadius:20,fontSize:11,fontWeight:700,background:prazo.bg,color:prazo.color}}>{prazo.icon} {prazo.label}</span>}<span style={{padding:"2px 8px",borderRadius:20,fontSize:11,fontWeight:700,background:bp.bg,color:bp.color}}>{bp.text}</span></div>);})}</div>
         </>)}
