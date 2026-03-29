@@ -107,7 +107,7 @@ function WhatsAppPage({onSave}){
   const[msgs,setMsgs]=useState(()=>{try{const s=localStorage.getItem("celinas-wa");return s?JSON.parse(s):ini;}catch{return ini;}});
   const[inp,setInp]=useState("");const[load,setLoad]=useState(false);const[prev,setPrev]=useState(null);const[copiado,setCopiado]=useState(false);
   const ref=useRef(null);
-  useEffect(()=>{if(view==="preaprovados")loadPreAprovados();},[view]);
+  // preaprovados loaded on tab click
   useEffect(()=>{try{localStorage.setItem("celinas-wa",JSON.stringify(msgs));}catch{}if(ref.current)ref.current.scrollTop=ref.current.scrollHeight;},[msgs]);
   const limpar=()=>{setMsgs(ini);setPrev(null);try{localStorage.removeItem("celinas-wa");}catch{}};
 
@@ -729,7 +729,7 @@ function App(){
           </div>
           <nav style={{display:"flex",gap:6,flexWrap:"wrap"}}>
             {[["dashboard","📊 Painel"],["producao","🏭 Produção"],["preaprovados","📥 Pré-aprovados"],["whatsapp","💬 WhatsApp"],["pedidos","📋 Pedidos"],["cardapio","🍫 Cardápio"],["precos","💲 & Preços"]].map(([v,l])=>(
-              <button key={v} onClick={()=>setView(v)} style={{padding:"7px 15px",borderRadius:20,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,background:view===v?"#fff":"rgba(255,255,255,.2)",color:view===v?RE:"#fff"}}>{l}</button>
+              <button key={v} onClick={()=>{setView(v);if(v==="preaprovados")loadPreAprovados();}} style={{padding:"7px 15px",borderRadius:20,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,background:view===v?"#fff":"rgba(255,255,255,.2)",color:view===v?RE:"#fff"}}>{l}</button>
             ))}
           </nav>
         </div>
