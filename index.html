@@ -575,8 +575,8 @@ function App(){
   const[preAprovados,setPreAprovados]=useState([]);
   const loadPreAprovados=()=>{fetch(SHEETS_URL+"?action=loadpre",{redirect:"follow"}).then(r=>r.json()).then(d=>{if(d.ok&&d.orders)setPreAprovados(d.orders);}).catch(err=>console.log("loadpre err:",err));};
   const savePreAprovados=(list)=>setPreAprovados(list);
-  const aprovarPedido=(p)=>{saveOrder({...p,status:"pendente"});fetch(SHEETS_URL+"?action=removepre&id="+p.id);setPreAprovados(prev=>prev.filter(x=>x.id!==p.id));};
-  const recusarPedido=(p)=>{fetch(SHEETS_URL+"?action=removepre&id="+p.id);setPreAprovados(prev=>prev.filter(x=>x.id!==p.id));};
+  const aprovarPedido=(p)=>{saveOrder({...p,status:"pendente"});fetch(SHEETS_URL+"?action=removepre&criado_em="+encodeURIComponent(p.criado_em));setPreAprovados(prev=>prev.filter(x=>x.criado_em!==p.criado_em));};
+  const recusarPedido=(p)=>{fetch(SHEETS_URL+"?action=removepre&criado_em="+encodeURIComponent(p.criado_em));setPreAprovados(prev=>prev.filter(x=>x.criado_em!==p.criado_em));};
   const[calendarDate,setCalendarDate]=useState(()=>new Date());
   const[calendarModal,setCalendarModal]=useState(null); // date string clicked
 
