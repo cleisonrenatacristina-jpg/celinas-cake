@@ -420,31 +420,6 @@ function FormModal({initial,onSave,onClose,cardapio}){
   const[statusPag,setStatusPag]=useState(()=>initial?.pago?"pago":initial?.pagoParcial?"parcial":"nao_pago");
   const[entradaInput,setEntradaInput]=useState(()=>initial?.entrada>0?String(initial.entrada):"");
   const set=(k,v)=>setF(p=>({...p,[k]:v}));
-  // Produção: total pedido, pronto, entregue e FALTA por produto
-  const producaoData=useMemo(()=>{
-    const m={}; // nome -> {total, pronto, entregue, emProducao, pendente}
-    const addQtd=(nome,qty,status)=>{
-      const key=nome.toLowerCase().trim();
-      if(!m[key])m[key]={nome,total:0,pendente:0,emProducao:0,pronto:0,entregue:0};
-      m[key].total+=qty;
-      if(status==="entregue")m[key].entregue+=qty;
-      else if(status==="pronto")m[key].pronto+=qty;
-      else if(status==="em_producao")m[key].emProducao+=qty;
-      else m[key].pendente+=qty;
-    };
-    orders.forEach(o=>{
-      parseItens(o.itens).forEach(({nome,qty})=>addQtd(nome,qty,o.status));
-    });
-    return Object.values(m)
-      .map(p=>({
-        ...p,
-        // falta = tudo que não está pronto nem entregue
-        falta:Math.max(0,p.total-p.pronto-p.entregue),
-        // progresso %
-        pct:p.total>0?Math.round((p.pronto+p.entregue)/p.total*100):0
-      }))
-      .sort((a,b)=>b.falta-a.falta||b.total-a.total);
-  },[orders]);
 
   const cats=["Todas",...Array.from(new Set(cardapio.map(p=>p.cat)))];
   const fil=cardapio.filter(p=>(cat==="Todas"||p.cat===cat)&&p.nome.toLowerCase().includes(busca.toLowerCase()));
