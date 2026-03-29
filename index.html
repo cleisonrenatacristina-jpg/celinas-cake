@@ -420,6 +420,32 @@ function FormModal({initial,onSave,onClose,cardapio}){
   const[statusPag,setStatusPag]=useState(()=>initial?.pago?"pago":initial?.pagoParcial?"parcial":"nao_pago");
   const[entradaInput,setEntradaInput]=useState(()=>initial?.entrada>0?String(initial.entrada):"");
   const set=(k,v)=>setF(p=>({...p,[k]:v}));
+  // Produção: total pedido, pronto, entregue e FALTA por produto
+  const producaoData=useMemo(()=>{
+    const m={}; // nome -> {total, pronto, entregue, emProducao, pendente}
+    const addQtd=(nome,qty,status)=>{
+      const key=nome.toLowerCase().trim();
+      if(!m[key])m[key]={nome,total:0,pendente:0,emProducao:0,pronto:0,entregue:0};
+      m[key].total+=qty;
+      if(status==="entregue")m[key].entregue+=qty;
+      else if(status==="pronto")m[key].pronto+=qty;
+      else if(status==="em_producao")m[key].emProducao+=qty;
+      else m[key].pendente+=qty;
+    };
+    orders.forEach(o=>{
+      parseItens(o.itens).forEach(({nome,qty})=>addQtd(nome,qty,o.status));
+    });
+    return Object.values(m)
+      .map(p=>({
+        ...p,
+        // falta = tudo que não está pronto nem entregue
+        falta:Math.max(0,p.total-p.pronto-p.entregue),
+        // progresso %
+        pct:p.total>0?Math.round((p.pronto+p.entregue)/p.total*100):0
+      }))
+      .sort((a,b)=>b.falta-a.falta||b.total-a.total);
+  },[orders]);
+
   const cats=["Todas",...Array.from(new Set(cardapio.map(p=>p.cat)))];
   const fil=cardapio.filter(p=>(cat==="Todas"||p.cat===cat)&&p.nome.toLowerCase().includes(busca.toLowerCase()));
   const tog=p=>setSel(prev=>prev.find(s=>s.nome===p.nome)?prev.filter(s=>s.nome!==p.nome):[...prev,{...p,qtd:1}]);
@@ -601,6 +627,32 @@ function App(){
   },[orders]);
   const stData=useMemo(()=>Object.entries(ST).map(([k,v])=>({name:v.label,value:orders.filter(o=>o.status===k).length,color:v.color})).filter(d=>d.value>0),[orders]);
   const fatData=useMemo(()=>{const m={};orders.forEach(o=>{const mm=o.data_retirada?o.data_retirada.slice(0,7):"?";if(!m[mm])m[mm]={mes:mm,recebido:0,aReceber:0};const total=(o.valor||0)+(o.frete||0);o.pago?m[mm].recebido+=total:m[mm].aReceber+=total;});return Object.values(m).sort((a,b)=>a.mes>b.mes?1:-1).map(d=>({...d,mes:d.mes==="?"?"?":new Date(d.mes+"-01").toLocaleDateString("pt-BR",{month:"short",year:"2-digit"})}));},[orders]);
+  // Produção: total pedido, pronto, entregue e FALTA por produto
+  const producaoData=useMemo(()=>{
+    const m={}; // nome -> {total, pronto, entregue, emProducao, pendente}
+    const addQtd=(nome,qty,status)=>{
+      const key=nome.toLowerCase().trim();
+      if(!m[key])m[key]={nome,total:0,pendente:0,emProducao:0,pronto:0,entregue:0};
+      m[key].total+=qty;
+      if(status==="entregue")m[key].entregue+=qty;
+      else if(status==="pronto")m[key].pronto+=qty;
+      else if(status==="em_producao")m[key].emProducao+=qty;
+      else m[key].pendente+=qty;
+    };
+    orders.forEach(o=>{
+      parseItens(o.itens).forEach(({nome,qty})=>addQtd(nome,qty,o.status));
+    });
+    return Object.values(m)
+      .map(p=>({
+        ...p,
+        // falta = tudo que não está pronto nem entregue
+        falta:Math.max(0,p.total-p.pronto-p.entregue),
+        // progresso %
+        pct:p.total>0?Math.round((p.pronto+p.entregue)/p.total*100):0
+      }))
+      .sort((a,b)=>b.falta-a.falta||b.total-a.total);
+  },[orders]);
+
   const cats=["Todas",...Array.from(new Set(cardapio.map(p=>p.cat)))];
 
   useEffect(()=>{
@@ -621,7 +673,7 @@ function App(){
             <div><div style={{fontSize:20,fontWeight:"bold",fontStyle:"italic",color:"#fff",letterSpacing:1}}>Celina's Cake</div><div style={{fontSize:9,letterSpacing:3,color:"rgba(255,255,255,.6)",textTransform:"uppercase"}}>🐣 Páscoa 2026 · {saving?"💾 salvando...":"✓ salvo"}</div></div>
           </div>
           <nav style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-            {[["dashboard","📊 Painel"],["whatsapp","💬 WhatsApp"],["pedidos","📋 Pedidos"],["cardapio","🍫 Cardápio"],["precos","💲 & Preços"]].map(([v,l])=>(
+            {[["dashboard","📊 Painel"],["producao","🏭 Produção"],["whatsapp","💬 WhatsApp"],["pedidos","📋 Pedidos"],["cardapio","🍫 Cardápio"],["precos","💲 & Preços"]].map(([v,l])=>(
               <button key={v} onClick={()=>setView(v)} style={{padding:"7px 15px",borderRadius:20,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,background:view===v?"#fff":"rgba(255,255,255,.2)",color:view===v?RE:"#fff"}}>{l}</button>
             ))}
           </nav>
@@ -632,6 +684,104 @@ function App(){
         {atrasados.length>0&&(<div style={{background:"#fff0f0",border:"2px solid #e05555",borderRadius:16,padding:"14px 18px",marginBottom:20}}><div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}><span style={{fontSize:22}}>🚨</span><div style={{fontWeight:700,color:"#e05555",fontSize:15}}>{atrasados.length} pedido(s) atrasado(s)!</div></div>{atrasados.map(o=>(<div key={o.id} style={{background:"#fff",borderRadius:10,padding:"10px 14px",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",borderLeft:"4px solid #e05555",marginBottom:6}}><div style={{flex:1}}><span style={{fontWeight:700,fontSize:13}}>{o.cliente}</span><span style={{fontSize:12,color:"#aaa",marginLeft:8}}>{o.itens}</span></div><span style={{fontSize:11,color:"#e05555",fontWeight:700}}>{Math.abs(getDias(o.data_retirada,agora))}d atrasado</span><button onClick={()=>updSt(o.id,"entregue")} style={{padding:"4px 10px",borderRadius:8,border:"none",background:"#e05555",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer"}}>Marcar entregue</button></div>))}</div>)}
 
         {view==="whatsapp"&&<WhatsAppPage onSave={saveOrder}/>}
+
+        {view==="producao"&&(()=>{
+          const totalFalta=producaoData.reduce((s,p)=>s+p.falta,0);
+          const totalPronto=producaoData.reduce((s,p)=>s+p.pronto,0);
+          const totalEntregue=producaoData.reduce((s,p)=>s+p.entregue,0);
+          const totalGeral=producaoData.reduce((s,p)=>s+p.total,0);
+          return(
+            <>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,flexWrap:"wrap",gap:12}}>
+                <div>
+                  <h2 style={{margin:0,fontSize:20,color:RE}}>🏭 Controle de Produção</h2>
+                  <p style={{margin:"4px 0 0",fontSize:12,color:"#aaa"}}>Baseado nos status dos pedidos — atualiza em tempo real</p>
+                </div>
+              </div>
+
+              {/* Cards resumo */}
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))",gap:12,marginBottom:24}}>
+                {[
+                  {label:"Total pedido",value:totalGeral,icon:"🥚",color:ROSA,bg:"#fff0f5"},
+                  {label:"✅ Prontos",value:totalPronto,icon:"✅",color:VE,bg:"#eaf5f1"},
+                  {label:"🎁 Entregues",value:totalEntregue,icon:"🎁",color:"#888",bg:"#f5f5f5"},
+                  {label:"⚠️ Falta produzir",value:totalFalta,icon:"⚠️",color:RE,bg:RC},
+                ].map((c,i)=>(
+                  <div key={i} style={{background:c.bg,borderRadius:14,padding:"16px 14px",borderLeft:`4px solid ${c.color}`}}>
+                    <div style={{fontSize:20}}>{c.icon}</div>
+                    <div style={{fontSize:22,fontWeight:"bold",color:c.color,marginTop:4}}>{c.value}</div>
+                    <div style={{fontSize:11,color:"#aaa",marginTop:2}}>{c.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Tabela de produção por produto */}
+              <div style={{background:"#fff",borderRadius:18,overflow:"hidden",boxShadow:"0 2px 14px rgba(180,48,74,.07)"}}>
+                {/* Header */}
+                <div style={{background:`linear-gradient(135deg,${RE},${ROSA})`,padding:"12px 18px",display:"grid",gridTemplateColumns:"1fr 60px 60px 60px 60px 80px 90px",gap:8,alignItems:"center"}}>
+                  {["🥚 Produto","Total","Pend.","Prod.","Pronto","Entregue","⚠️ Falta"].map((h,i)=>(
+                    <div key={i} style={{color:"#fff",fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:.5,textAlign:i===0?"left":"center"}}>{h}</div>
+                  ))}
+                </div>
+
+                {producaoData.length===0?(
+                  <div style={{padding:"40px 0",textAlign:"center",color:"#ccc",fontSize:13}}>Nenhum pedido ainda</div>
+                ):(
+                  producaoData.map((p,i)=>{
+                    const urgente=p.falta>0&&p.falta===p.total; // nada produzido ainda
+                    const quaseok=p.falta>0&&p.pct>=50;
+                    const bg=i%2===0?"#fff":"#fdf4f6";
+                    const bordaColor=p.falta===0?VE:p.pct>=50?AM:RE;
+                    return(
+                      <div key={i} style={{display:"grid",gridTemplateColumns:"1fr 60px 60px 60px 60px 80px 90px",gap:8,alignItems:"center",padding:"11px 18px",borderBottom:"1px solid #fce4ec",background:bg,borderLeft:`4px solid ${bordaColor}`}}>
+                        {/* Nome */}
+                        <div>
+                          <div style={{fontSize:12,fontWeight:600,color:"#333"}}>{p.nome}</div>
+                          {/* Barra de progresso */}
+                          <div style={{marginTop:4,height:5,borderRadius:4,background:"#f0dde4",overflow:"hidden"}}>
+                            <div style={{height:"100%",borderRadius:4,width:`${p.pct}%`,background:p.falta===0?VE:p.pct>=50?AM:RE,transition:"width .3s"}}/>
+                          </div>
+                          <div style={{fontSize:9,color:"#bbb",marginTop:2}}>{p.pct}% concluído</div>
+                        </div>
+                        {/* Total */}
+                        <div style={{textAlign:"center",fontWeight:700,fontSize:13,color:"#555"}}>{p.total}</div>
+                        {/* Pendente */}
+                        <div style={{textAlign:"center",fontSize:12,color:p.pendente>0?"#e8b86d":"#ccc",fontWeight:p.pendente>0?700:400}}>{p.pendente||"—"}</div>
+                        {/* Em produção */}
+                        <div style={{textAlign:"center",fontSize:12,color:p.emProducao>0?ROSA:"#ccc",fontWeight:p.emProducao>0?700:400}}>{p.emProducao||"—"}</div>
+                        {/* Pronto */}
+                        <div style={{textAlign:"center",fontSize:12,color:p.pronto>0?VE:"#ccc",fontWeight:p.pronto>0?700:400}}>{p.pronto||"—"}</div>
+                        {/* Entregue */}
+                        <div style={{textAlign:"center",fontSize:12,color:p.entregue>0?"#888":"#ccc",fontWeight:p.entregue>0?700:400}}>{p.entregue||"—"}</div>
+                        {/* Falta */}
+                        <div style={{textAlign:"center"}}>
+                          {p.falta===0?(
+                            <span style={{padding:"3px 10px",borderRadius:20,background:"#eaf5f1",color:VE,fontSize:11,fontWeight:700}}>✅ OK</span>
+                          ):(
+                            <span style={{padding:"3px 10px",borderRadius:20,background:p.pct>=50?"#fffbe6":RC,color:p.pct>=50?AM:RE,fontSize:12,fontWeight:700,minWidth:40,display:"inline-block",textAlign:"center"}}>{p.falta} un.</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+
+                {/* Rodapé totais */}
+                {producaoData.length>0&&(
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 60px 60px 60px 60px 80px 90px",gap:8,alignItems:"center",padding:"12px 18px",background:RC,borderTop:`2px solid ${RM}`}}>
+                    <div style={{fontSize:11,fontWeight:700,color:RE}}>TOTAL GERAL</div>
+                    <div style={{textAlign:"center",fontWeight:700,fontSize:13,color:RE}}>{totalGeral}</div>
+                    <div style={{textAlign:"center",fontWeight:700,fontSize:12,color:"#e8b86d"}}>{producaoData.reduce((s,p)=>s+p.pendente,0)||"—"}</div>
+                    <div style={{textAlign:"center",fontWeight:700,fontSize:12,color:ROSA}}>{producaoData.reduce((s,p)=>s+p.emProducao,0)||"—"}</div>
+                    <div style={{textAlign:"center",fontWeight:700,fontSize:12,color:VE}}>{totalPronto||"—"}</div>
+                    <div style={{textAlign:"center",fontWeight:700,fontSize:12,color:"#888"}}>{totalEntregue||"—"}</div>
+                    <div style={{textAlign:"center"}}><span style={{padding:"3px 10px",borderRadius:20,background:totalFalta===0?"#eaf5f1":RC,color:totalFalta===0?VE:RE,fontSize:12,fontWeight:700}}>{totalFalta===0?"✅ Tudo OK":`${totalFalta} un.`}</span></div>
+                  </div>
+                )}
+              </div>
+            </>
+          );
+        })()}
         {view==="precos"&&<PrecosPage cardapio={cardapio} precos={precos} setPrecos={setPrecos} extrasCardapio={extrasCardapio} setExtrasCardapio={setExtrasCardapio}/>}
 
         {view==="dashboard"&&(<>
