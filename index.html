@@ -685,103 +685,74 @@ function App(){
 
         {view==="whatsapp"&&<WhatsAppPage onSave={saveOrder}/>}
 
-        {view==="producao"&&(()=>{
-          const totalFalta=producaoData.reduce((s,p)=>s+p.falta,0);
-          const totalPronto=producaoData.reduce((s,p)=>s+p.pronto,0);
-          const totalEntregue=producaoData.reduce((s,p)=>s+p.entregue,0);
-          const totalGeral=producaoData.reduce((s,p)=>s+p.total,0);
-          return(
-            <>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,flexWrap:"wrap",gap:12}}>
-                <div>
-                  <h2 style={{margin:0,fontSize:20,color:RE}}>🏭 Controle de Produção</h2>
-                  <p style={{margin:"4px 0 0",fontSize:12,color:"#aaa"}}>Baseado nos status dos pedidos — atualiza em tempo real</p>
-                </div>
+\        {view==="producao"&&(
+          <div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,flexWrap:"wrap",gap:12}}>
+              <div>
+                <h2 style={{margin:0,fontSize:20,color:RE}}>🏭 Controle de Produção</h2>
+                <p style={{margin:"4px 0 0",fontSize:12,color:"#aaa"}}>Baseado nos status dos pedidos — atualiza em tempo real</p>
               </div>
-
-              {/* Cards resumo */}
-              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))",gap:12,marginBottom:24}}>
-                {[
-                  {label:"Total pedido",value:totalGeral,icon:"🥚",color:ROSA,bg:"#fff0f5"},
-                  {label:"✅ Prontos",value:totalPronto,icon:"✅",color:VE,bg:"#eaf5f1"},
-                  {label:"🎁 Entregues",value:totalEntregue,icon:"🎁",color:"#888",bg:"#f5f5f5"},
-                  {label:"⚠️ Falta produzir",value:totalFalta,icon:"⚠️",color:RE,bg:RC},
-                ].map((c,i)=>(
-                  <div key={i} style={{background:c.bg,borderRadius:14,padding:"16px 14px",borderLeft:`4px solid ${c.color}`}}>
-                    <div style={{fontSize:20}}>{c.icon}</div>
-                    <div style={{fontSize:22,fontWeight:"bold",color:c.color,marginTop:4}}>{c.value}</div>
-                    <div style={{fontSize:11,color:"#aaa",marginTop:2}}>{c.label}</div>
-                  </div>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))",gap:12,marginBottom:24}}>
+              {[
+                {label:"Total pedido",value:producaoData.reduce((s,p)=>s+p.total,0),icon:"🥚",color:ROSA,bg:"#fff0f5"},
+                {label:"✅ Prontos",value:producaoData.reduce((s,p)=>s+p.pronto,0),icon:"✅",color:VE,bg:"#eaf5f1"},
+                {label:"🎁 Entregues",value:producaoData.reduce((s,p)=>s+p.entregue,0),icon:"🎁",color:"#888",bg:"#f5f5f5"},
+                {label:"⚠️ Falta",value:producaoData.reduce((s,p)=>s+p.falta,0),icon:"⚠️",color:RE,bg:RC},
+              ].map((c,i)=>(
+                <div key={i} style={{background:c.bg,borderRadius:14,padding:"16px 14px",borderLeft:`4px solid ${c.color}`}}>
+                  <div style={{fontSize:20}}>{c.icon}</div>
+                  <div style={{fontSize:22,fontWeight:"bold",color:c.color,marginTop:4}}>{c.value}</div>
+                  <div style={{fontSize:11,color:"#aaa",marginTop:2}}>{c.label}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{background:"#fff",borderRadius:18,overflow:"hidden",boxShadow:"0 2px 14px rgba(180,48,74,.07)"}}>
+              <div style={{background:`linear-gradient(135deg,${RE},${ROSA})`,padding:"12px 18px",display:"grid",gridTemplateColumns:"1fr 55px 55px 55px 60px 70px 80px",gap:6,alignItems:"center"}}>
+                {["🥚 Produto","Total","Pend.","Prod.","Pronto","Entregue","⚠️ Falta"].map((h,i)=>(
+                  <div key={i} style={{color:"#fff",fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:.5,textAlign:i===0?"left":"center"}}>{h}</div>
                 ))}
               </div>
-
-              {/* Tabela de produção por produto */}
-              <div style={{background:"#fff",borderRadius:18,overflow:"hidden",boxShadow:"0 2px 14px rgba(180,48,74,.07)"}}>
-                {/* Header */}
-                <div style={{background:`linear-gradient(135deg,${RE},${ROSA})`,padding:"12px 18px",display:"grid",gridTemplateColumns:"1fr 60px 60px 60px 60px 80px 90px",gap:8,alignItems:"center"}}>
-                  {["🥚 Produto","Total","Pend.","Prod.","Pronto","Entregue","⚠️ Falta"].map((h,i)=>(
-                    <div key={i} style={{color:"#fff",fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:.5,textAlign:i===0?"left":"center"}}>{h}</div>
-                  ))}
-                </div>
-
-                {producaoData.length===0?(
-                  <div style={{padding:"40px 0",textAlign:"center",color:"#ccc",fontSize:13}}>Nenhum pedido ainda</div>
-                ):(
-                  producaoData.map((p,i)=>{
-                    const urgente=p.falta>0&&p.falta===p.total; // nada produzido ainda
-                    const quaseok=p.falta>0&&p.pct>=50;
-                    const bg=i%2===0?"#fff":"#fdf4f6";
-                    const bordaColor=p.falta===0?VE:p.pct>=50?AM:RE;
-                    return(
-                      <div key={i} style={{display:"grid",gridTemplateColumns:"1fr 60px 60px 60px 60px 80px 90px",gap:8,alignItems:"center",padding:"11px 18px",borderBottom:"1px solid #fce4ec",background:bg,borderLeft:`4px solid ${bordaColor}`}}>
-                        {/* Nome */}
-                        <div>
-                          <div style={{fontSize:12,fontWeight:600,color:"#333"}}>{p.nome}</div>
-                          {/* Barra de progresso */}
-                          <div style={{marginTop:4,height:5,borderRadius:4,background:"#f0dde4",overflow:"hidden"}}>
-                            <div style={{height:"100%",borderRadius:4,width:`${p.pct}%`,background:p.falta===0?VE:p.pct>=50?AM:RE,transition:"width .3s"}}/>
-                          </div>
-                          <div style={{fontSize:9,color:"#bbb",marginTop:2}}>{p.pct}% concluído</div>
-                        </div>
-                        {/* Total */}
-                        <div style={{textAlign:"center",fontWeight:700,fontSize:13,color:"#555"}}>{p.total}</div>
-                        {/* Pendente */}
-                        <div style={{textAlign:"center",fontSize:12,color:p.pendente>0?"#e8b86d":"#ccc",fontWeight:p.pendente>0?700:400}}>{p.pendente||"—"}</div>
-                        {/* Em produção */}
-                        <div style={{textAlign:"center",fontSize:12,color:p.emProducao>0?ROSA:"#ccc",fontWeight:p.emProducao>0?700:400}}>{p.emProducao||"—"}</div>
-                        {/* Pronto */}
-                        <div style={{textAlign:"center",fontSize:12,color:p.pronto>0?VE:"#ccc",fontWeight:p.pronto>0?700:400}}>{p.pronto||"—"}</div>
-                        {/* Entregue */}
-                        <div style={{textAlign:"center",fontSize:12,color:p.entregue>0?"#888":"#ccc",fontWeight:p.entregue>0?700:400}}>{p.entregue||"—"}</div>
-                        {/* Falta */}
-                        <div style={{textAlign:"center"}}>
-                          {p.falta===0?(
-                            <span style={{padding:"3px 10px",borderRadius:20,background:"#eaf5f1",color:VE,fontSize:11,fontWeight:700}}>✅ OK</span>
-                          ):(
-                            <span style={{padding:"3px 10px",borderRadius:20,background:p.pct>=50?"#fffbe6":RC,color:p.pct>=50?AM:RE,fontSize:12,fontWeight:700,minWidth:40,display:"inline-block",textAlign:"center"}}>{p.falta} un.</span>
-                          )}
-                        </div>
+              {producaoData.length===0?(
+                <div style={{padding:"40px 0",textAlign:"center",color:"#ccc",fontSize:13}}>Nenhum pedido ainda</div>
+              ):(
+                producaoData.map((p,i)=>(
+                  <div key={i} style={{display:"grid",gridTemplateColumns:"1fr 55px 55px 55px 60px 70px 80px",gap:6,alignItems:"center",padding:"11px 18px",borderBottom:"1px solid #fce4ec",background:i%2===0?"#fff":"#fdf4f6",borderLeft:`4px solid ${p.falta===0?VE:p.pct>=50?AM:RE}`}}>
+                    <div>
+                      <div style={{fontSize:12,fontWeight:600,color:"#333"}}>{p.nome}</div>
+                      <div style={{marginTop:4,height:5,borderRadius:4,background:"#f0dde4",overflow:"hidden"}}>
+                        <div style={{height:"100%",borderRadius:4,width:`${p.pct}%`,background:p.falta===0?VE:p.pct>=50?AM:RE}}/>
                       </div>
-                    );
-                  })
-                )}
-
-                {/* Rodapé totais */}
-                {producaoData.length>0&&(
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 60px 60px 60px 60px 80px 90px",gap:8,alignItems:"center",padding:"12px 18px",background:RC,borderTop:`2px solid ${RM}`}}>
-                    <div style={{fontSize:11,fontWeight:700,color:RE}}>TOTAL GERAL</div>
-                    <div style={{textAlign:"center",fontWeight:700,fontSize:13,color:RE}}>{totalGeral}</div>
-                    <div style={{textAlign:"center",fontWeight:700,fontSize:12,color:"#e8b86d"}}>{producaoData.reduce((s,p)=>s+p.pendente,0)||"—"}</div>
-                    <div style={{textAlign:"center",fontWeight:700,fontSize:12,color:ROSA}}>{producaoData.reduce((s,p)=>s+p.emProducao,0)||"—"}</div>
-                    <div style={{textAlign:"center",fontWeight:700,fontSize:12,color:VE}}>{totalPronto||"—"}</div>
-                    <div style={{textAlign:"center",fontWeight:700,fontSize:12,color:"#888"}}>{totalEntregue||"—"}</div>
-                    <div style={{textAlign:"center"}}><span style={{padding:"3px 10px",borderRadius:20,background:totalFalta===0?"#eaf5f1":RC,color:totalFalta===0?VE:RE,fontSize:12,fontWeight:700}}>{totalFalta===0?"✅ Tudo OK":`${totalFalta} un.`}</span></div>
+                      <div style={{fontSize:9,color:"#bbb",marginTop:2}}>{p.pct}% concluído</div>
+                    </div>
+                    <div style={{textAlign:"center",fontWeight:700,fontSize:13,color:"#555"}}>{p.total}</div>
+                    <div style={{textAlign:"center",fontSize:12,color:p.pendente>0?"#e8b86d":"#ccc",fontWeight:p.pendente>0?700:400}}>{p.pendente||"—"}</div>
+                    <div style={{textAlign:"center",fontSize:12,color:p.emProducao>0?ROSA:"#ccc",fontWeight:p.emProducao>0?700:400}}>{p.emProducao||"—"}</div>
+                    <div style={{textAlign:"center",fontSize:12,color:p.pronto>0?VE:"#ccc",fontWeight:p.pronto>0?700:400}}>{p.pronto||"—"}</div>
+                    <div style={{textAlign:"center",fontSize:12,color:p.entregue>0?"#888":"#ccc",fontWeight:p.entregue>0?700:400}}>{p.entregue||"—"}</div>
+                    <div style={{textAlign:"center"}}>
+                      {p.falta===0
+                        ?<span style={{padding:"3px 10px",borderRadius:20,background:"#eaf5f1",color:VE,fontSize:11,fontWeight:700}}>✅ OK</span>
+                        :<span style={{padding:"3px 10px",borderRadius:20,background:p.pct>=50?"#fffbe6":RC,color:p.pct>=50?AM:RE,fontSize:12,fontWeight:700}}>{p.falta} un.</span>
+                      }
+                    </div>
                   </div>
-                )}
-              </div>
-            </>
-          );
-        })()}
+                ))
+              )}
+              {producaoData.length>0&&(
+                <div style={{display:"grid",gridTemplateColumns:"1fr 55px 55px 55px 60px 70px 80px",gap:6,alignItems:"center",padding:"12px 18px",background:RC,borderTop:`2px solid ${RM}`}}>
+                  <div style={{fontSize:11,fontWeight:700,color:RE}}>TOTAL GERAL</div>
+                  <div style={{textAlign:"center",fontWeight:700,fontSize:13,color:RE}}>{producaoData.reduce((s,p)=>s+p.total,0)}</div>
+                  <div style={{textAlign:"center",fontWeight:700,fontSize:12,color:"#e8b86d"}}>{producaoData.reduce((s,p)=>s+p.pendente,0)||"—"}</div>
+                  <div style={{textAlign:"center",fontWeight:700,fontSize:12,color:ROSA}}>{producaoData.reduce((s,p)=>s+p.emProducao,0)||"—"}</div>
+                  <div style={{textAlign:"center",fontWeight:700,fontSize:12,color:VE}}>{producaoData.reduce((s,p)=>s+p.pronto,0)||"—"}</div>
+                  <div style={{textAlign:"center",fontWeight:700,fontSize:12,color:"#888"}}>{producaoData.reduce((s,p)=>s+p.entregue,0)||"—"}</div>
+                  <div style={{textAlign:"center"}}>{producaoData.reduce((s,p)=>s+p.falta,0)===0?<span style={{padding:"3px 10px",borderRadius:20,background:"#eaf5f1",color:VE,fontSize:11,fontWeight:700}}>✅ OK</span>:<span style={{padding:"3px 10px",borderRadius:20,background:RC,color:RE,fontSize:12,fontWeight:700}}>{producaoData.reduce((s,p)=>s+p.falta,0)} un.</span>}</div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
         {view==="precos"&&<PrecosPage cardapio={cardapio} precos={precos} setPrecos={setPrecos} extrasCardapio={extrasCardapio} setExtrasCardapio={setExtrasCardapio}/>}
 
         {view==="dashboard"&&(<>
