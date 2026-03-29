@@ -499,6 +499,8 @@ function App(){
     try{const s=localStorage.getItem("celinas-extras");return s?JSON.parse(s):[]}catch{return[];}
   });
   const[buscaPedido,setBuscaPedido]=useState("");
+  const[calendarDate,setCalendarDate]=useState(()=>new Date());
+  const[calendarModal,setCalendarModal]=useState(null); // date string clicked
 
   // Persiste extras e preços no localStorage sempre que mudarem
   useEffect(()=>{
@@ -732,12 +734,86 @@ function App(){
 
         {view==="dashboard"&&(<>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(175px,1fr))",gap:14,marginBottom:24}}>
-            {[{label:"Em Aberto",value:totalPendentes,icon:"⏳",color:"#e8b86d",bg:"#fdf6e3"},{label:"Prontos",value:totalProntos,icon:"✅",color:VE,bg:"#eaf5f1"},{label:"Recebido",value:fmt(totalRecebido),icon:"💰",color:VE,bg:"#eaf5f1"},{label:"A Receber",value:fmt(totalAReceber),icon:"⚠️",color:RE,bg:RC},{label:"Total",value:orders.length,icon:"🎂",color:ROSA,bg:"#fff0f5"}].map((c,i)=>(<div key={i} style={{background:c.bg,borderRadius:16,padding:"18px 16px",borderLeft:`4px solid ${c.color}`}}><div style={{fontSize:22}}>{c.icon}</div><div style={{fontSize:20,fontWeight:"bold",color:c.color,marginTop:4}}>{c.value}</div><div style={{fontSize:11,color:"#aaa",marginTop:2}}>{c.label}</div></div>))}
+            {[{label:"Em Aberto",value:totalPendentes,icon:"⏳",color:"#e8b86d",bg:"#fdf6e3"},{label:"Prontos",value:totalProntos,icon:"✅",color:VE,bg:"#eaf5f1"},{label:"Entregues",value:orders.filter(o=>o.status==="entregue").length,icon:"🎁",color:"#888",bg:"#f5f5f5"},{label:"Recebido",value:fmt(totalRecebido),icon:"💰",color:VE,bg:"#eaf5f1"},{label:"A Receber",value:fmt(totalAReceber),icon:"⚠️",color:RE,bg:RC},{label:"Total Pedidos",value:orders.length,icon:"🎂",color:ROSA,bg:"#fff0f5"}].map((c,i)=>(<div key={i} style={{background:c.bg,borderRadius:16,padding:"18px 16px",borderLeft:`4px solid ${c.color}`}}><div style={{fontSize:22}}>{c.icon}</div><div style={{fontSize:20,fontWeight:"bold",color:c.color,marginTop:4}}>{c.value}</div><div style={{fontSize:11,color:"#aaa",marginTop:2}}>{c.label}</div></div>))}
           </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18,marginBottom:18}}>
             {[{t:"🏆 Qtd. por Produto",c:<ResponsiveContainer width="100%" height={340}><BarChart data={prodData} layout="vertical" margin={{left:0,right:16}}><XAxis type="number" tick={{fontSize:10}}/><YAxis type="category" dataKey="name" tick={{fontSize:9}} width={150}/><Tooltip formatter={v=>[`${v} unid.`]}/><Bar dataKey="qty" radius={[0,8,8,0]}>{prodData.map((_,i)=><Cell key={i} fill={PAL[i%PAL.length]}/>)}</Bar></BarChart></ResponsiveContainer>},{t:"📌 Status",c:<ResponsiveContainer width="100%" height={200}><PieChart><Pie data={stData} cx="50%" cy="50%" innerRadius={50} outerRadius={85} paddingAngle={4} dataKey="value" label={({name,value})=>`${name}: ${value}`} labelLine={false}>{stData.map((d,i)=><Cell key={i} fill={d.color}/>)}</Pie><Tooltip/></PieChart></ResponsiveContainer>},{t:"📈 Faturamento por Mês",c:<ResponsiveContainer width="100%" height={200}><BarChart data={fatData}><CartesianGrid strokeDasharray="3 3" stroke="#fce4ec"/><XAxis dataKey="mes" tick={{fontSize:11}}/><YAxis tick={{fontSize:11}} tickFormatter={v=>`R$${v}`}/><Tooltip formatter={(v,n)=>[fmt(v),n==="recebido"?"Recebido":"A Receber"]}/><Legend formatter={v=>v==="recebido"?"Recebido":"A Receber"}/><Bar dataKey="recebido" fill={VE} radius={[6,6,0,0]}/><Bar dataKey="aReceber" fill={AM} radius={[6,6,0,0]}/></BarChart></ResponsiveContainer>},{t:"💵 Receita por Produto",c:<ResponsiveContainer width="100%" height={340}><BarChart data={valData} layout="vertical" margin={{left:0,right:16}}><XAxis type="number" tick={{fontSize:10}} tickFormatter={v=>`R$${v}`}/><YAxis type="category" dataKey="name" tick={{fontSize:9}} width={150}/><Tooltip formatter={v=>[fmt(v)]}/><Bar dataKey="total" radius={[0,8,8,0]}>{valData.map((_,i)=><Cell key={i} fill={PAL[i%PAL.length]}/>)}</Bar></BarChart></ResponsiveContainer>}].map((c,i)=>(<div key={i} style={{background:"#fff",borderRadius:18,padding:20,boxShadow:"0 2px 14px rgba(180,48,74,.07)"}}><h3 style={{margin:"0 0 14px",fontSize:14,color:RE}}>{c.t}</h3>{c.c}</div>))}
           </div>
-          <div style={{background:"#fff",borderRadius:18,padding:20}}><h3 style={{margin:"0 0 14px",fontSize:14,color:RE}}>📅 Próximas Entregas</h3>{orders.filter(o=>o.status!=="entregue"&&o.data_retirada).sort((a,b)=>a.data_retirada>b.data_retirada?1:-1).slice(0,6).length===0?<div style={{color:"#ccc",fontSize:13}}>Nenhuma agendada</div>:orders.filter(o=>o.status!=="entregue"&&o.data_retirada).sort((a,b)=>a.data_retirada>b.data_retirada?1:-1).slice(0,6).map(o=>{const prazo=getPrazo(getDias(o.data_retirada,agora),o.status);const bp=getBadge(o);return(<div key={o.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:"1px solid #fce4ec",flexWrap:"wrap"}}><span style={{fontSize:18}}>{ST[o.status]?.icon}</span><div style={{flex:1}}><div style={{fontWeight:700,fontSize:13}}>{o.cliente}</div><div style={{fontSize:11,color:"#aaa"}}>{o.itens}</div></div><div style={{fontSize:12,color:RE,fontWeight:700}}>{new Date(o.data_retirada+"T12:00").toLocaleDateString("pt-BR")}</div>{prazo&&<span style={{padding:"2px 8px",borderRadius:20,fontSize:11,fontWeight:700,background:prazo.bg,color:prazo.color}}>{prazo.icon} {prazo.label}</span>}<span style={{padding:"2px 8px",borderRadius:20,fontSize:11,fontWeight:700,background:bp.bg,color:bp.color}}>{bp.text}</span></div>);})}</div>
+          (()=>{
+            const ano=calendarDate.getFullYear();
+            const mes=calendarDate.getMonth();
+            const primeiroDia=new Date(ano,mes,1).getDay();
+            const diasNoMes=new Date(ano,mes+1,0).getDate();
+            const hoje=agora;
+            const nomeMes=calendarDate.toLocaleDateString("pt-BR",{month:"long",year:"numeric"});
+            // Map de data -> pedidos
+            const pedidosPorDia={};
+            orders.forEach(o=>{
+              if(o.data_retirada){
+                const k=o.data_retirada;
+                if(!pedidosPorDia[k])pedidosPorDia[k]=[];
+                pedidosPorDia[k].push(o);
+              }
+            });
+            const dias=[];
+            for(let i=0;i<primeiroDia;i++)dias.push(null);
+            for(let d=1;d<=diasNoMes;d++)dias.push(d);
+            return(
+              <div style={{background:"#fff",borderRadius:18,padding:20,boxShadow:"0 2px 14px rgba(180,48,74,.07)"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+                  <h3 style={{margin:0,fontSize:14,color:RE}}>📅 Calendário de Entregas</h3>
+                  <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                    <button onClick={()=>setCalendarDate(new Date(ano,mes-1,1))} style={{padding:"4px 12px",borderRadius:20,border:`1.5px solid ${RM}`,background:"#fff",color:RE,fontWeight:700,fontSize:14,cursor:"pointer"}}>‹</button>
+                    <span style={{fontSize:13,fontWeight:700,color:"#555",textTransform:"capitalize"}}>{nomeMes}</span>
+                    <button onClick={()=>setCalendarDate(new Date(ano,mes+1,1))} style={{padding:"4px 12px",borderRadius:20,border:`1.5px solid ${RM}`,background:"#fff",color:RE,fontWeight:700,fontSize:14,cursor:"pointer"}}>›</button>
+                    <button onClick={()=>setCalendarDate(new Date())} style={{padding:"4px 10px",borderRadius:20,border:`1.5px solid ${RM}`,background:RC,color:RE,fontWeight:700,fontSize:11,cursor:"pointer"}}>Hoje</button>
+                  </div>
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2,marginBottom:4}}>
+                  {["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"].map(d=>(
+                    <div key={d} style={{textAlign:"center",fontSize:10,fontWeight:700,color:"#aaa",padding:"4px 0"}}>{d}</div>
+                  ))}
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:3}}>
+                  {dias.map((d,i)=>{
+                    if(!d)return<div key={i}/>;
+                    const dateStr=`${ano}-${String(mes+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+                    const ps=pedidosPorDia[dateStr]||[];
+                    const isHoje=d===hoje.getDate()&&mes===hoje.getMonth()&&ano===hoje.getFullYear();
+                    const temEntrega=ps.length>0;
+                    const temAtrasado=ps.some(o=>o.status!=="entregue"&&getDias(o.data_retirada,agora)<0);
+                    const todosEntregues=ps.length>0&&ps.every(o=>o.status==="entregue");
+                    const bgDia=temAtrasado?"#fff0f0":todosEntregues?"#eaf5f1":temEntrega?RC:"transparent";
+                    const borderDia=temAtrasado?"#e05555":todosEntregues?VE:temEntrega?RE:"transparent";
+                    return(
+                      <div key={i} onClick={()=>ps.length>0&&setCalendarModal(dateStr)}
+                        style={{minHeight:52,borderRadius:10,padding:"5px 4px",background:bgDia,border:`2px solid ${isHoje?RE:borderDia}`,cursor:ps.length>0?"pointer":"default",position:"relative",transition:"opacity .15s"}}
+                      >
+                        <div style={{fontSize:11,fontWeight:isHoje?700:400,color:isHoje?RE:"#555",textAlign:"right",paddingRight:3}}>{d}</div>
+                        {ps.length>0&&(
+                          <div style={{display:"flex",flexWrap:"wrap",gap:2,marginTop:2}}>
+                            {ps.slice(0,3).map((o,oi)=>(
+                              <div key={oi} style={{width:8,height:8,borderRadius:"50%",background:o.status==="entregue"?"#888":o.status==="pronto"?VE:o.status==="em_producao"?ROSA:AM}}/>
+                            ))}
+                            {ps.length>3&&<div style={{fontSize:8,color:RE,fontWeight:700}}>+{ps.length-3}</div>}
+                          </div>
+                        )}
+                        {ps.length>0&&<div style={{position:"absolute",bottom:3,right:4,fontSize:9,fontWeight:700,color:temAtrasado?"#e05555":todosEntregues?"#888":RE}}>{ps.length}</div>}
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{display:"flex",gap:12,marginTop:12,flexWrap:"wrap"}}>
+                  {[{c:AM,l:"Pendente"},{c:ROSA,l:"Em produção"},{c:VE,l:"Pronto"},{c:"#888",l:"Entregue"},{c:"#e05555",l:"Atrasado"}].map((x,i)=>(
+                    <div key={i} style={{display:"flex",alignItems:"center",gap:4,fontSize:10,color:"#aaa"}}>
+                      <div style={{width:8,height:8,borderRadius:"50%",background:x.c}}/>
+                      {x.l}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()
         </>)}
 
         {view==="cardapio"&&(<>
@@ -822,6 +898,48 @@ function App(){
         </>)}
       </main>
 
+      {/* Modal do calendário — pedidos do dia clicado */}
+      {calendarModal&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(180,48,74,.22)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:950,padding:16}} onClick={()=>setCalendarModal(null)}>
+          <div style={{background:"#fff",borderRadius:20,padding:24,width:"100%",maxWidth:520,boxShadow:"0 8px 40px rgba(180,48,74,.2)",maxHeight:"80vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+              <h3 style={{margin:0,color:RE,fontSize:16}}>📅 {new Date(calendarModal+"T12:00").toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long"})}</h3>
+              <button onClick={()=>setCalendarModal(null)} style={{background:"none",border:"none",fontSize:22,cursor:"pointer",color:"#ccc"}}>×</button>
+            </div>
+            {(orders.filter(o=>o.data_retirada===calendarModal)).length===0
+              ?<div style={{color:"#ccc",fontSize:13,textAlign:"center",padding:"20px 0"}}>Nenhum pedido neste dia</div>
+              :orders.filter(o=>o.data_retirada===calendarModal).map(o=>{
+                const st=ST[o.status]||ST.pendente;
+                const bp=getBadge(o);
+                const prazo=getPrazo(getDias(o.data_retirada,agora),o.status);
+                return(
+                  <div key={o.id} style={{background:"#fdf4f6",borderRadius:14,padding:"12px 14px",marginBottom:10,borderLeft:`4px solid ${st.color}`}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6,flexWrap:"wrap"}}>
+                      <span style={{fontSize:16}}>{st.icon}</span>
+                      <span style={{fontWeight:700,fontSize:14}}>{o.cliente}</span>
+                      <span style={{padding:"2px 8px",borderRadius:20,fontSize:11,fontWeight:700,background:st.bg,color:st.color}}>{st.label}</span>
+                      <span style={{padding:"2px 8px",borderRadius:20,fontSize:11,fontWeight:700,background:bp.bg,color:bp.color}}>{bp.text}</span>
+                      {prazo&&<span style={{padding:"2px 8px",borderRadius:20,fontSize:11,fontWeight:700,background:prazo.bg,color:prazo.color}}>{prazo.icon} {prazo.label}</span>}
+                    </div>
+                    <div style={{fontSize:12,color:"#555",marginBottom:4}}>🥚 {o.itens}</div>
+                    <div style={{display:"flex",gap:12,fontSize:11,color:"#aaa",flexWrap:"wrap"}}>
+                      {o.telefone&&<span>📞 {o.telefone}</span>}
+                      {o.valor&&<span>💵 {fmt((o.valor||0)+(o.frete||0))}</span>}
+                      {o.tipo_entrega==="entrega"&&<span>🚚 Entrega{o.endereco?`: ${o.endereco}`:""}</span>}
+                    </div>
+                    {o.observacoes&&<div style={{marginTop:4,fontSize:11,color:"#bbb",fontStyle:"italic"}}>📝 {o.observacoes}</div>}
+                    <div style={{display:"flex",gap:6,marginTop:10,flexWrap:"wrap"}}>
+                      {Object.entries(ST).map(([k,v])=>(
+                        <button key={k} onClick={()=>{updSt(o.id,k);}} style={{padding:"4px 10px",borderRadius:8,border:"1.5px solid",borderColor:o.status===k?v.color:"#f0dde4",background:o.status===k?v.bg:"#fff",color:o.status===k?v.color:"#bbb",fontSize:10,fontWeight:700,cursor:"pointer"}}>{v.icon} {v.label}</button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })
+            }
+          </div>
+        </div>
+      )}
       {form!==null&&<FormModal initial={form} onSave={saveOrder} onClose={()=>setForm(null)} cardapio={cardapio}/>}
       {toast&&<div style={{position:"fixed",bottom:24,right:24,padding:"12px 20px",borderRadius:12,background:toast.type==="err"?"#e07070":RE,color:"#fff",fontSize:14,fontWeight:700,boxShadow:"0 4px 20px rgba(0,0,0,.15)",zIndex:999}}>{toast.msg}</div>}
     </div>
