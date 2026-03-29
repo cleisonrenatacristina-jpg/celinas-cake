@@ -573,7 +573,7 @@ function App(){
   });
   const[buscaPedido,setBuscaPedido]=useState("");
   const[preAprovados,setPreAprovados]=useState([]);
-  const loadPreAprovados=()=>{fetch(SHEETS_URL+"?action=loadpre").then(r=>r.json()).then(d=>{if(d.ok)setPreAprovados(d.orders||[]);});};
+  const loadPreAprovados=()=>{fetch(SHEETS_URL+"?action=loadpre",{redirect:"follow"}).then(r=>r.json()).then(d=>{if(d.ok&&d.orders)setPreAprovados(d.orders);}).catch(err=>console.log("loadpre err:",err));};
   const savePreAprovados=(list)=>setPreAprovados(list);
   const aprovarPedido=(p)=>{saveOrder({...p,status:"pendente"});fetch(SHEETS_URL+"?action=removepre&id="+p.id);setPreAprovados(prev=>prev.filter(x=>x.id!==p.id));};
   const recusarPedido=(p)=>{fetch(SHEETS_URL+"?action=removepre&id="+p.id);setPreAprovados(prev=>prev.filter(x=>x.id!==p.id));};
