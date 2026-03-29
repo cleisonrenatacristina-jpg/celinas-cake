@@ -483,15 +483,27 @@ function App(){
   const[toast,setToast]=useState(null);
   const[agora,setAgora]=useState(new Date());
   const[nextId,setNextId]=useState(1);
-  const[precos,setPrecos]=useState(()=>Object.fromEntries(CAD_BASE.map(p=>[p.nome,p.preco])));
+  const[precos,setPrecos]=useState(()=>{
+    try{const s=localStorage.getItem("celinas-precos");return s?JSON.parse(s):Object.fromEntries(CAD_BASE.map(p=>[p.nome,p.preco]));}catch{return Object.fromEntries(CAD_BASE.map(p=>[p.nome,p.preco]));}
+  });
   const[catFiltro,setCatFiltro]=useState("Todas");
   const[showFiltros,setShowFiltros]=useState(false);
   const[filtroMes,setFiltroMes]=useState("");
   const[filtroValMin,setFiltroValMin]=useState("");
   const[filtroValMax,setFiltroValMax]=useState("");
   const[filtroPago,setFiltroPago]=useState("todos");
-  const[extrasCardapio,setExtrasCardapio]=useState([]);
+  const[extrasCardapio,setExtrasCardapio]=useState(()=>{
+    try{const s=localStorage.getItem("celinas-extras");return s?JSON.parse(s):[]}catch{return[];}
+  });
   const[buscaPedido,setBuscaPedido]=useState("");
+
+  // Persiste extras e preços no localStorage sempre que mudarem
+  useEffect(()=>{
+    try{localStorage.setItem("celinas-extras",JSON.stringify(extrasCardapio));}catch{}
+  },[extrasCardapio]);
+  useEffect(()=>{
+    try{localStorage.setItem("celinas-precos",JSON.stringify(precos));}catch{}
+  },[precos]);
 
   const cardapio=useMemo(()=>[...CAD_BASE.map(p=>({...p,preco:precos[p.nome]??p.preco})),...(extrasCardapio||[]).map(p=>({...p,preco:precos[p.nome]??p.preco}))],[precos,extrasCardapio]);
   const showToast=(msg,type="ok")=>{setToast({msg,type});setTimeout(()=>setToast(null),3000);};
