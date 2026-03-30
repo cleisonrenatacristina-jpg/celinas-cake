@@ -733,7 +733,7 @@ function App(){
             <div><div style={{fontSize:20,fontWeight:"bold",fontStyle:"italic",color:"#fff",letterSpacing:1}}>Celina's Cake</div><div style={{fontSize:9,letterSpacing:3,color:"rgba(255,255,255,.6)",textTransform:"uppercase"}}>🐣 Páscoa 2026 · {saving?"💾 salvando...":"✓ salvo"}</div></div>
           </div>
           <nav style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-            {[["dashboard","📊 Painel"],["producao","🏭 Produção"],["whatsapp","💬 WhatsApp"],["pedidos","📋 Pedidos"],["cardapio","🍫 Cardápio"],["precos","💲 & Preços"]].map(([v,l])=>(
+            {[["dashboard","📊 Painel"],["producao","🏭 Produção"],["chocolate","🍫 Chocolate"],["whatsapp","💬 WhatsApp"],["pedidos","📋 Pedidos"],["cardapio","🎂 Cardápio"],["precos","💲 & Preços"]].map(([v,l])=>(
               <button key={v} onClick={()=>setView(v)} style={{padding:"7px 15px",borderRadius:20,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,background:view===v?"#fff":"rgba(255,255,255,.2)",color:view===v?RE:"#fff"}}>{l}</button>
             ))}
           </nav>
@@ -834,65 +834,129 @@ function App(){
           <CalendarioEntregas orders={orders} agora={agora} calendarDate={calendarDate} setCalendarDate={setCalendarDate} setCalendarModal={setCalendarModal} getDias={getDias} getPrazo={getPrazo} getBadge={getBadge}/>
         </>)}
 
-        {view==="producao"&&(
-          <div style={{background:"#fff",borderRadius:18,padding:20,marginTop:20,boxShadow:"0 2px 14px rgba(180,48,74,.07)"}}>
-            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16,flexWrap:"wrap"}}>
-              <span style={{fontSize:24}}>&#x1F36B;</span>
+        {view==="chocolate"&&(
+          <div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,flexWrap:"wrap",gap:12}}>
               <div>
-                <h3 style={{margin:0,fontSize:16,color:RE}}>Calculadora de Chocolate</h3>
-                <p style={{margin:"2px 0 0",fontSize:11,color:"#aaa"}}>Total necessario baseado nos pedidos em aberto</p>
+                <h2 style={{margin:0,fontSize:20,color:RE}}>🍫 Calculadora de Chocolate</h2>
+                <p style={{margin:"4px 0 0",fontSize:12,color:"#aaa"}}>Baseado na quantidade e gramagem de todos os pedidos</p>
               </div>
             </div>
             {(()=>{
-              const getGramas=(nome)=>{const n=nome.toLowerCase();const m=n.match(/(\d+)\s*g/);if(m)return parseInt(m[1]);if(n.includes("brigadeiro"))return 8;if(n.includes("brownie"))return 30;if(n.includes("bem casado"))return 20;if(n.includes("trufinha"))return 15;if(n.includes("bombom"))return 15;if(n.includes("copinho"))return 20;return 0;};
-              const getTipo=(nome)=>{const n=nome.toLowerCase();if(n.includes("branco"))return"branco";if(n.includes("misto"))return"misto";if(n.includes("zero"))return"zero";return"leite";};
+              const getGramas=(nome)=>{
+                const n=nome.toLowerCase();
+                const m=n.match(/(\d+)\s*g/);
+                if(m)return parseInt(m[1]);
+                if(n.includes("brigadeiro"))return 8;
+                if(n.includes("brownie"))return 30;
+                if(n.includes("bem casado"))return 20;
+                if(n.includes("trufinha"))return 15;
+                if(n.includes("bombom"))return 15;
+                if(n.includes("copinho"))return 20;
+                if(n.includes("conchinha"))return 15;
+                return 0;
+              };
+              const getTipo=(nome)=>{
+                const n=nome.toLowerCase();
+                if(n.includes("branco"))return"branco";
+                if(n.includes("misto"))return"misto";
+                if(n.includes("zero"))return"zero";
+                return"leite";
+              };
               const choc={leite:0,branco:0,zero:0};
-              const detalhe={};
+              const detalhe=[];
               producaoData.forEach(p=>{
                 const g=getGramas(p.nome);
                 if(!g)return;
                 const tipo=getTipo(p.nome);
                 const totalG=g*p.total;
-                detalhe[p.nome]={nome:p.nome,gramas:g,qty:p.total,total:totalG,tipo};
+                detalhe.push({nome:p.nome,gramas:g,qty:p.total,total:totalG,tipo,falta:p.falta,prontoReal:p.prontoReal||p.pronto,entregue:p.entregue});
                 if(tipo==="misto"){choc.leite+=totalG/2;choc.branco+=totalG/2;}
                 else{choc[tipo]=(choc[tipo]||0)+totalG;}
               });
-              const fmtKg=(g)=>g>=1000?(g/1000).toFixed(2).replace(".",",")+" kg":Math.round(g)+" g";
+              const fmtKg=(g)=>{
+                if(g<=0)return"—";
+                if(g>=1000)return(g/1000).toFixed(2).replace(".",",")+" kg";
+                return Math.round(g)+" g";
+              };
               const total=choc.leite+choc.branco+choc.zero;
-              return(<>
-                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))",gap:12,marginBottom:20}}>
-                  {[
-                    {label:"Ao Leite",valor:choc.leite,cor:"#8B4513",bg:"#fff5e6"},
-                    {label:"Branco",valor:choc.branco,cor:"#b8860b",bg:"#fffde7"},
-                    {label:"Zero Acucar",valor:choc.zero,cor:"#2e7d32",bg:"#eaf5f1"},
-                    {label:"Total Geral",valor:total,cor:RE,bg:RC},
-                  ].map((c,i)=>(
-                    <div key={i} style={{background:c.bg,borderRadius:14,padding:"14px 16px",borderLeft:`4px solid ${c.cor}`}}>
-                      <div style={{fontSize:11,color:"#888",marginBottom:4}}>&#x1F36B; {c.label}</div>
-                      <div style={{fontSize:20,fontWeight:700,color:c.cor}}>{fmtKg(c.valor)}</div>
+              const barras=(g)=>Math.ceil(g/500); // 1 barra = 500g
+              return(
+                <>
+                  {/* Cards resumo */}
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:14,marginBottom:24}}>
+                    {[
+                      {label:"🍫 Ao Leite",valor:choc.leite,cor:"#6d3a1f",bg:"#fff5e6",barra:"#c8733a"},
+                      {label:"🤍 Branco",valor:choc.branco,cor:"#7a6000",bg:"#fffde7",barra:"#d4a800"},
+                      {label:"💚 Zero Açúcar",valor:choc.zero,cor:"#1b5e20",bg:"#e8f5e9",barra:"#43a047"},
+                      {label:"📦 Total Geral",valor:total,cor:RE,bg:RC,barra:RE},
+                    ].map((c,i)=>(
+                      <div key={i} style={{background:c.bg,borderRadius:16,padding:"18px 16px",borderLeft:`5px solid ${c.cor}`,boxShadow:"0 2px 10px rgba(0,0,0,.05)"}}>
+                        <div style={{fontSize:13,color:c.cor,fontWeight:700,marginBottom:6}}>{c.label}</div>
+                        <div style={{fontSize:28,fontWeight:700,color:c.cor}}>{fmtKg(c.valor)}</div>
+                        {c.valor>0&&<div style={{fontSize:11,color:"#888",marginTop:4}}>≈ {barras(c.valor)} barra(s) de 500g</div>}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Tabela detalhada */}
+                  <div style={{background:"#fff",borderRadius:18,overflow:"hidden",boxShadow:"0 2px 14px rgba(180,48,74,.07)"}}>
+                    <div style={{background:`linear-gradient(135deg,${RE},${ROSA})`,padding:"12px 18px",display:"grid",gridTemplateColumns:"1fr 60px 60px 100px 100px 80px",gap:6,alignItems:"center"}}>
+                      {["🥚 Produto","Gramas","Qtd","Choc. total","Tipo","Barras 500g"].map((h,i)=>(
+                        <div key={i} style={{color:"#fff",fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:.5,textAlign:i===0?"left":"center"}}>{h}</div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-                <div style={{borderTop:`1.5px solid ${RM}`,paddingTop:14}}>
-                  <div style={{fontSize:11,fontWeight:700,color:"#888",marginBottom:8,textTransform:"uppercase",letterSpacing:1}}>Por produto</div>
-                  {Object.values(detalhe).sort((a,b)=>b.total-a.total).map((d,i)=>(
-                    <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"7px 0",borderBottom:"1px solid #fce4ec",flexWrap:"wrap"}}>
-                      <div style={{flex:1,fontSize:12,color:"#333"}}>{d.nome}</div>
-                      <span style={{fontSize:11,color:"#888"}}>{d.gramas}g x {d.qty} un.</span>
-                      <span style={{fontSize:12,fontWeight:700,color:"#8B4513",minWidth:80,textAlign:"right"}}>{fmtKg(d.total)}</span>
-                      <span style={{padding:"2px 8px",borderRadius:20,fontSize:10,fontWeight:700,
-                        background:d.tipo==="branco"?"#fffde7":d.tipo==="zero"?"#eaf5f1":"#fff5e6",
-                        color:d.tipo==="branco"?"#b8860b":d.tipo==="zero"?"#2e7d32":"#8B4513"
-                      }}>{d.tipo==="zero"?"zero acucar":d.tipo}</span>
+                    {detalhe.length===0?(
+                      <div style={{padding:"40px 0",textAlign:"center",color:"#ccc",fontSize:13}}>Nenhum pedido ainda</div>
+                    ):(
+                      detalhe.sort((a,b)=>b.total-a.total).map((d,i)=>{
+                        const corTipo=d.tipo==="branco"?"#7a6000":d.tipo==="zero"?"#1b5e20":d.tipo==="misto"?"#5c1a8a":"#6d3a1f";
+                        const bgTipo=d.tipo==="branco"?"#fffde7":d.tipo==="zero"?"#e8f5e9":d.tipo==="misto"?"#f3e5f5":"#fff5e6";
+                        return(
+                          <div key={i} style={{display:"grid",gridTemplateColumns:"1fr 60px 60px 100px 100px 80px",gap:6,alignItems:"center",padding:"11px 18px",borderBottom:"1px solid #fce4ec",background:i%2===0?"#fff":"#fdf4f6"}}>
+                            <div style={{fontSize:12,fontWeight:600,color:"#333"}}>{d.nome}</div>
+                            <div style={{textAlign:"center",fontSize:12,color:"#888"}}>{d.gramas}g</div>
+                            <div style={{textAlign:"center",fontSize:12,fontWeight:700,color:"#555"}}>{d.qty}x</div>
+                            <div style={{textAlign:"center",fontSize:13,fontWeight:700,color:"#6d3a1f"}}>{fmtKg(d.total)}</div>
+                            <div style={{textAlign:"center"}}>
+                              <span style={{padding:"3px 10px",borderRadius:20,fontSize:10,fontWeight:700,background:bgTipo,color:corTipo}}>
+                                {d.tipo==="misto"?"½ leite + ½ branco":d.tipo==="zero"?"zero açúcar":d.tipo==="branco"?"branco":"ao leite"}
+                              </span>
+                            </div>
+                            <div style={{textAlign:"center",fontSize:12,fontWeight:700,color:RE}}>{Math.ceil(d.total/500)}</div>
+                          </div>
+                        );
+                      })
+                    )}
+                    {detalhe.length>0&&(
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 60px 60px 100px 100px 80px",gap:6,alignItems:"center",padding:"12px 18px",background:RC,borderTop:`2px solid ${RM}`}}>
+                        <div style={{fontSize:11,fontWeight:700,color:RE}}>TOTAL</div>
+                        <div/>
+                        <div style={{textAlign:"center",fontSize:12,fontWeight:700,color:RE}}>{detalhe.reduce((s,d)=>s+d.qty,0)}x</div>
+                        <div style={{textAlign:"center",fontSize:13,fontWeight:700,color:RE}}>{fmtKg(total)}</div>
+                        <div/>
+                        <div style={{textAlign:"center",fontSize:12,fontWeight:700,color:RE}}>{Math.ceil(total/500)}</div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Resumo por tipo */}
+                  {total>0&&(
+                    <div style={{marginTop:16,background:"#fff",borderRadius:16,padding:18,boxShadow:"0 2px 10px rgba(0,0,0,.05)"}}>
+                      <div style={{fontWeight:700,fontSize:13,color:RE,marginBottom:12}}>📋 Resumo para compra</div>
+                      {choc.leite>0&&<div style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid #fce4ec",fontSize:13}}><span>🍫 Chocolate ao Leite</span><span style={{fontWeight:700,color:"#6d3a1f"}}>{fmtKg(choc.leite)} → {Math.ceil(choc.leite/500)} barra(s)</span></div>}
+                      {choc.branco>0&&<div style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid #fce4ec",fontSize:13}}><span>🤍 Chocolate Branco</span><span style={{fontWeight:700,color:"#7a6000"}}>{fmtKg(choc.branco)} → {Math.ceil(choc.branco/500)} barra(s)</span></div>}
+                      {choc.zero>0&&<div style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid #fce4ec",fontSize:13}}><span>💚 Chocolate Zero Açúcar</span><span style={{fontWeight:700,color:"#1b5e20"}}>{fmtKg(choc.zero)} → {Math.ceil(choc.zero/500)} barra(s)</span></div>}
+                      <div style={{display:"flex",justifyContent:"space-between",padding:"10px 0",fontSize:15,marginTop:4}}><span style={{fontWeight:700,color:RE}}>📦 Total a comprar</span><span style={{fontWeight:700,color:RE}}>{fmtKg(total)} → {Math.ceil(total/500)} barras</span></div>
                     </div>
-                  ))}
-                </div>
-              </>);
+                  )}
+                </>
+              );
             })()}
           </div>
         )}
 
-                {view==="cardapio"&&(<>
+        {view==="cardapio"&&(<>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,flexWrap:"wrap",gap:12}}>
             <div><h2 style={{margin:0,fontSize:20,color:RE}}>🍫 Tabela de Páscoa 2026</h2><p style={{margin:"4px 0 0",fontSize:12,color:"#aaa"}}>Trabalhamos apenas com chocolate Nobre</p></div>
             <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{cats.map(c=><button key={c} onClick={()=>setCatFiltro(c)} style={{padding:"5px 12px",borderRadius:20,border:"2px solid",borderColor:catFiltro===c?RE:"#f0dde4",background:catFiltro===c?RE:"#fff",color:catFiltro===c?"#fff":"#888",fontSize:11,fontWeight:700,cursor:"pointer"}}>{c}</button>)}</div>
