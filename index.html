@@ -826,27 +826,24 @@ function App(){
 
         {view==="dashboard"&&(<>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:14,marginBottom:24}}>
-            {(()=>{
-              const cards=[
-                {label:"Em Aberto",value:totalPendentes,icon:"⏳",color:"#d4900a",bg:"#fdf6e3",border:"#f5c842",tipo:"numero",sub:"pedidos pendentes"},
-                {label:"Prontos",value:totalProntos,icon:"✅",color:VE,bg:"#eaf5f1",border:"#4caf50",tipo:"numero",sub:"aguardando retirada"},
-                {label:"Entregues",value:orders.filter(o=>o.status==="entregue").length,icon:"🎁",color:"#666",bg:"#f5f5f5",border:"#bbb",tipo:"numero",sub:"pedidos concluídos"},
-                {label:"Total Pedidos",value:orders.length,icon:"🎂",color:ROSA,bg:"#fff0f5",border:RM,tipo:"numero",sub:"desde o início"},
-                {label:"💰 Recebido",value:fmt(totalRecebido),icon:"💰",color:"#1a7a4a",bg:"#eaf5f1",border:"#4caf50",tipo:"valor",sub:"já pago pelos clientes"},
-                {label:"⚠️ A Receber",value:fmt(totalAReceber),icon:"⚠️",color:RE,bg:RC,border:RM,tipo:"valor",sub:"ainda em aberto"},
-                {label:"📈 Total Geral",value:fmt(totalRecebido+totalAReceber),icon:"📈",color:"#2c3e6b",bg:"#eef2ff",border:"#6979d4",tipo:"valor",sub:"volume total de vendas"},
-              ];
-              return cards.map((c,i)=>(
-                <div key={i} style={{background:c.bg,borderRadius:18,padding:"20px 18px",border:`1.5px solid ${c.border}`,boxShadow:"0 2px 12px rgba(0,0,0,.06)",display:"flex",flexDirection:"column",gap:4}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-                    <div style={{fontSize:11,fontWeight:700,color:c.color,textTransform:"uppercase",letterSpacing:.8}}>{c.label}</div>
-                    <span style={{fontSize:20}}>{c.icon}</span>
-                  </div>
-                  <div style={{fontSize:c.tipo==="valor"?22:28,fontWeight:700,color:c.color,lineHeight:1.1,marginTop:4}}>{c.value}</div>
-                  <div style={{fontSize:10,color:"#aaa",marginTop:2}}>{c.sub}</div>
+            {[
+              {label:"Em Aberto",value:totalPendentes,icon:"⏳",color:"#d4900a",bg:"#fdf6e3",border:"#f5c842",sub:"pedidos pendentes",isVal:false},
+              {label:"Prontos",value:totalProntos,icon:"✅",color:VE,bg:"#eaf5f1",border:"#4caf50",sub:"aguardando retirada",isVal:false},
+              {label:"Entregues",value:orders.filter(o=>o.status==="entregue").length,icon:"🎁",color:"#666",bg:"#f5f5f5",border:"#bbb",sub:"pedidos concluídos",isVal:false},
+              {label:"Total Pedidos",value:orders.length,icon:"🎂",color:ROSA,bg:"#fff0f5",border:RM,sub:"desde o início",isVal:false},
+              {label:"Recebido",value:fmt(totalRecebido),icon:"💰",color:"#1a7a4a",bg:"#eaf5f1",border:"#4caf50",sub:"já pago pelos clientes",isVal:true},
+              {label:"A Receber",value:fmt(totalAReceber),icon:"⚠️",color:RE,bg:RC,border:RM,sub:"ainda em aberto",isVal:true},
+              {label:"Total Geral",value:fmt(totalRecebido+totalAReceber),icon:"📈",color:"#2c3e6b",bg:"#eef2ff",border:"#6979d4",sub:"volume total de vendas",isVal:true},
+            ].map((c,i)=>(
+              <div key={i} style={{background:c.bg,borderRadius:18,padding:"20px 18px",border:`1.5px solid ${c.border}`,boxShadow:"0 2px 12px rgba(0,0,0,.06)",display:"flex",flexDirection:"column",gap:4}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+                  <div style={{fontSize:11,fontWeight:700,color:c.color,textTransform:"uppercase",letterSpacing:.8}}>{c.label}</div>
+                  <span style={{fontSize:20}}>{c.icon}</span>
                 </div>
-              ));
-            })()}
+                <div style={{fontSize:c.isVal?20:28,fontWeight:700,color:c.color,lineHeight:1.1,marginTop:4}}>{c.value}</div>
+                <div style={{fontSize:10,color:"#aaa",marginTop:2}}>{c.sub}</div>
+              </div>
+            ))}
           </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18,marginBottom:18}}>
             {[{t:"🏆 Qtd. por Produto",c:<ResponsiveContainer width="100%" height={340}><BarChart data={prodData} layout="vertical" margin={{left:0,right:16}}><XAxis type="number" tick={{fontSize:10}}/><YAxis type="category" dataKey="name" tick={{fontSize:9}} width={150}/><Tooltip formatter={v=>[`${v} unid.`]}/><Bar dataKey="qty" radius={[0,8,8,0]}>{prodData.map((_,i)=><Cell key={i} fill={PAL[i%PAL.length]}/>)}</Bar></BarChart></ResponsiveContainer>},{t:"📌 Status",c:<ResponsiveContainer width="100%" height={200}><PieChart><Pie data={stData} cx="50%" cy="50%" innerRadius={50} outerRadius={85} paddingAngle={4} dataKey="value" label={({name,value})=>`${name}: ${value}`} labelLine={false}>{stData.map((d,i)=><Cell key={i} fill={d.color}/>)}</Pie><Tooltip/></PieChart></ResponsiveContainer>},{t:"📈 Faturamento por Mês",c:<ResponsiveContainer width="100%" height={200}><BarChart data={fatData}><CartesianGrid strokeDasharray="3 3" stroke="#fce4ec"/><XAxis dataKey="mes" tick={{fontSize:11}}/><YAxis tick={{fontSize:11}} tickFormatter={v=>`R$${v}`}/><Tooltip formatter={(v,n)=>[fmt(v),n==="recebido"?"Recebido":"A Receber"]}/><Legend formatter={v=>v==="recebido"?"Recebido":"A Receber"}/><Bar dataKey="recebido" fill={VE} radius={[6,6,0,0]}/><Bar dataKey="aReceber" fill={AM} radius={[6,6,0,0]}/></BarChart></ResponsiveContainer>},{t:"💵 Receita por Produto",c:<ResponsiveContainer width="100%" height={340}><BarChart data={valData} layout="vertical" margin={{left:0,right:16}}><XAxis type="number" tick={{fontSize:10}} tickFormatter={v=>`R$${v}`}/><YAxis type="category" dataKey="name" tick={{fontSize:9}} width={150}/><Tooltip formatter={v=>[fmt(v)]}/><Bar dataKey="total" radius={[0,8,8,0]}>{valData.map((_,i)=><Cell key={i} fill={PAL[i%PAL.length]}/>)}</Bar></BarChart></ResponsiveContainer>}].map((c,i)=>(<div key={i} style={{background:"#fff",borderRadius:18,padding:20,boxShadow:"0 2px 14px rgba(180,48,74,.07)"}}><h3 style={{margin:"0 0 14px",fontSize:14,color:RE}}>{c.t}</h3>{c.c}</div>))}
