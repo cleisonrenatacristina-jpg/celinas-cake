@@ -477,6 +477,32 @@ function FormModal({initial,onSave,onClose,cardapio}){
 }
 
 
+
+function getChocInfo(nome) {
+  var n = nome.toLowerCase();
+  if (n.includes("fatia")) return {gramas: 420, fatias: 6, isFatia: true};
+  if (n.includes("brigadeiro")) return {gramas: 8, fatias: 0, isFatia: false};
+  if (n.includes("brownie")) return {gramas: 30, fatias: 0, isFatia: false};
+  if (n.includes("bem casado")) return {gramas: 20, fatias: 0, isFatia: false};
+  if (n.includes("trufinha")) return {gramas: 15, fatias: 0, isFatia: false};
+  if (n.includes("bombom")) return {gramas: 15, fatias: 0, isFatia: false};
+  if (n.includes("copinho")) return {gramas: 20, fatias: 0, isFatia: false};
+  if (n.includes("conchinha")) return {gramas: 15, fatias: 0, isFatia: false};
+  var nums = ["800","650","500","400","250","200","150","120","130","60"];
+  for (var i=0; i<nums.length; i++) {
+    if (n.includes(nums[i]+"g") || n.includes(nums[i]+" g")) return {gramas: parseInt(nums[i]), fatias: 0, isFatia: false};
+  }
+  return {gramas: 0, fatias: 0, isFatia: false};
+}
+
+function getChocTipo(nome) {
+  var n = nome.toLowerCase();
+  if (n.includes("branco")) return "branco";
+  if (n.includes("misto")) return "misto";
+  if (n.includes("zero")) return "zero";
+  return "leite";
+}
+
 function CalendarioEntregas({orders,agora,calendarDate,setCalendarDate,setCalendarModal,getDias,getPrazo,getBadge}){
   const ano=calendarDate.getFullYear();
   const mes=calendarDate.getMonth();
@@ -859,33 +885,16 @@ function App(){
             </div>
 
             {(()=>{
-              const getTipo=(nome)=>{const n=nome.toLowerCase();if(n.includes("branco"))return"branco";if(n.includes("misto"))return"misto";if(n.includes("zero"))return"zero";return"leite";};
-
               // Calcular chocolate e fatias
               const choc={leite:0,branco:0,zero:0};
               const produtos=[];
 
               producaoData.forEach(p=>{
-                const n=p.nome.toLowerCase();
-                const tipo=getTipo(p.nome);
-                let grChoc=0;
-                let fatiasPorUnidade=0;
-                let isFatia=false;
-
-                if(n.includes("fatia")){
-                  fatiasPorUnidade=6;
-                  grChoc=70*6; // 6 fatias x 70g chocolate cada
-                  isFatia=true;
-                } else {
-                  const m=n.match(/(\d+)\s*g/);
-                  if(m)grChoc=parseInt(m[1]);
-                  else if(n.includes("brigadeiro"))grChoc=8;
-                  else if(n.includes("brownie"))grChoc=30;
-                  else if(n.includes("bem casado"))grChoc=20;
-                  else if(n.includes("trufinha"))grChoc=15;
-                  else if(n.includes("bombom"))grChoc=15;
-                  else if(n.includes("copinho"))grChoc=20;
-                }
+                const info=getChocInfo(p.nome);
+                const tipo=getChocTipo(p.nome);
+                const grChoc=info.gramas;
+                const fatiasPorUnidade=info.fatias;
+                const isFatia=info.isFatia;
 
                 if(!grChoc)return;
 
