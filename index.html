@@ -87,7 +87,7 @@ const CAD_BASE=[
   {cat:"Doces Finos",nome:"Conchinha (unidade)",preco:4.50},
 ];
 
-const fmt=v=>{const n=Number(v)||0;return"R$ "+n.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});};
+const fmt=v=>`R$ ${Number(v).toFixed(2).replace(".",",")}`;
 const getDias=(dr,ag)=>{if(!dr)return null;return Math.ceil((new Date(dr+"T00:00:00")-new Date(ag.toDateString()))/86400000);};
 const getPrazo=(d,s)=>{if(s==="entregue"||d===null)return null;if(d<0)return{label:`${Math.abs(d)}d atrasado`,color:"#e05555",bg:"#fff0f0",icon:"🚨"};if(d===0)return{label:"Hoje!",color:"#e07020",bg:"#fff5e0",icon:"⚡"};if(d===1)return{label:"Amanhã",color:AM,bg:"#fffbe6",icon:"⏰"};if(d<=3)return{label:`${d}d`,color:ROSA,bg:RC,icon:"📅"};return{label:`${d}d`,color:"#888",bg:"#f5f5f5",icon:"📅"};};
 const getBadge=o=>({bg:o.pago?"#eaf5f1":o.pagoParcial?"#fff8ec":"#fff5e0",color:o.pago?VE:o.pagoParcial?AM:"#e8a020",text:o.pago?"💰 Pago":o.pagoParcial?`💛 Entrada ${fmt(o.entrada||0)}`:"⏳ A pagar"});
@@ -282,7 +282,7 @@ function PrecosPage({cardapio,precos,setPrecos,extrasCardapio,setExtrasCardapio}
     <>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:12}}>
         <div>
-          <h2 style={{margin:0,fontSize:20,color:RE}}>🍫 Cardápio e Preços</h2>
+          <h2 style={{margin:0,fontSize:20,color:RE}}>🍫 Cardápio & Preços</h2>
           <p style={{margin:"4px 0 0",fontSize:12,color:"#aaa"}}>{cardapio.length} produto(s) · {(extrasCardapio||[]).length} adicionado(s) por você</p>
         </div>
         <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
@@ -420,7 +420,6 @@ function FormModal({initial,onSave,onClose,cardapio}){
   const[statusPag,setStatusPag]=useState(()=>initial?.pago?"pago":initial?.pagoParcial?"parcial":"nao_pago");
   const[entradaInput,setEntradaInput]=useState(()=>initial?.entrada>0?String(initial.entrada):"");
   const set=(k,v)=>setF(p=>({...p,[k]:v}));
-
   const cats=["Todas",...Array.from(new Set(cardapio.map(p=>p.cat)))];
   const fil=cardapio.filter(p=>(cat==="Todas"||p.cat===cat)&&p.nome.toLowerCase().includes(busca.toLowerCase()));
   const tog=p=>setSel(prev=>prev.find(s=>s.nome===p.nome)?prev.filter(s=>s.nome!==p.nome):[...prev,{...p,qtd:1}]);
@@ -476,104 +475,6 @@ function FormModal({initial,onSave,onClose,cardapio}){
         <button onClick={handleSave} style={{width:"100%",padding:13,borderRadius:12,border:"none",background:`linear-gradient(135deg,${RE},${ROSA})`,color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer",marginTop:4}}>💾 Salvar {total>0&&`— ${fmt(total)}`}</button></div></div>);
 }
 
-
-
-function getChocInfo(nome) {
-  var n = nome.toLowerCase();
-  if (n.includes("fatia")) return {gramas: 420, fatias: 6, isFatia: true};
-  if (n.includes("brigadeiro")) return {gramas: 8, fatias: 0, isFatia: false};
-  if (n.includes("brownie")) return {gramas: 30, fatias: 0, isFatia: false};
-  if (n.includes("bem casado")) return {gramas: 20, fatias: 0, isFatia: false};
-  if (n.includes("trufinha")) return {gramas: 15, fatias: 0, isFatia: false};
-  if (n.includes("bombom")) return {gramas: 15, fatias: 0, isFatia: false};
-  if (n.includes("copinho")) return {gramas: 20, fatias: 0, isFatia: false};
-  if (n.includes("conchinha")) return {gramas: 15, fatias: 0, isFatia: false};
-  var nums = ["800","650","500","400","250","200","150","120","130","60"];
-  for (var i=0; i<nums.length; i++) {
-    if (n.includes(nums[i]+"g") || n.includes(nums[i]+" g")) return {gramas: parseInt(nums[i]), fatias: 0, isFatia: false};
-  }
-  return {gramas: 0, fatias: 0, isFatia: false};
-}
-
-function getChocTipo(nome) {
-  var n = nome.toLowerCase();
-  if (n.includes("branco")) return "branco";
-  if (n.includes("misto")) return "misto";
-  if (n.includes("zero")) return "zero";
-  return "leite";
-}
-
-function CalendarioEntregas({orders,agora,calendarDate,setCalendarDate,setCalendarModal,getDias,getPrazo,getBadge}){
-  const ano=calendarDate.getFullYear();
-  const mes=calendarDate.getMonth();
-  const primeiroDia=new Date(ano,mes,1).getDay();
-  const diasNoMes=new Date(ano,mes+1,0).getDate();
-  const nomeMes=calendarDate.toLocaleDateString("pt-BR",{month:"long",year:"numeric"});
-  const pedidosPorDia={};
-  orders.forEach(o=>{
-    if(o.data_retirada){
-      if(!pedidosPorDia[o.data_retirada])pedidosPorDia[o.data_retirada]=[];
-      pedidosPorDia[o.data_retirada].push(o);
-    }
-  });
-  const dias=[];
-  for(let i=0;i<primeiroDia;i++)dias.push(null);
-  for(let d=1;d<=diasNoMes;d++)dias.push(d);
-  return(
-    <div style={{background:"#fff",borderRadius:18,padding:20,boxShadow:"0 2px 14px rgba(180,48,74,.07)"}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:8}}>
-        <h3 style={{margin:0,fontSize:14,color:RE}}>📅 Calendário de Entregas</h3>
-        <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
-          <button onClick={()=>setCalendarDate(new Date(ano,mes-1,1))} style={{padding:"4px 12px",borderRadius:20,border:`1.5px solid ${RM}`,background:"#fff",color:RE,fontWeight:700,fontSize:14,cursor:"pointer"}}>‹</button>
-          <span style={{fontSize:13,fontWeight:700,color:"#555",textTransform:"capitalize",minWidth:140,textAlign:"center"}}>{nomeMes}</span>
-          <button onClick={()=>setCalendarDate(new Date(ano,mes+1,1))} style={{padding:"4px 12px",borderRadius:20,border:`1.5px solid ${RM}`,background:"#fff",color:RE,fontWeight:700,fontSize:14,cursor:"pointer"}}>›</button>
-          <button onClick={()=>setCalendarDate(new Date())} style={{padding:"4px 10px",borderRadius:20,border:`1.5px solid ${RM}`,background:RC,color:RE,fontWeight:700,fontSize:11,cursor:"pointer"}}>Hoje</button>
-        </div>
-      </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2,marginBottom:4}}>
-        {["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"].map(d=>(
-          <div key={d} style={{textAlign:"center",fontSize:10,fontWeight:700,color:"#aaa",padding:"4px 0"}}>{d}</div>
-        ))}
-      </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:3}}>
-        {dias.map((d,i)=>{
-          if(!d)return <div key={i}/>;
-          const dateStr=`${ano}-${String(mes+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
-          const ps=pedidosPorDia[dateStr]||[];
-          const isHoje=d===agora.getDate()&&mes===agora.getMonth()&&ano===agora.getFullYear();
-          const temAtrasado=ps.some(o=>o.status!=="entregue"&&getDias(o.data_retirada,agora)<0);
-          const todosEntregues=ps.length>0&&ps.every(o=>o.status==="entregue");
-          const bgDia=temAtrasado?"#fff0f0":todosEntregues?"#eaf5f1":ps.length>0?RC:"transparent";
-          const borderDia=temAtrasado?"#e05555":todosEntregues?VE:ps.length>0?RE:"transparent";
-          return(
-            <div key={i} onClick={()=>ps.length>0&&setCalendarModal(dateStr)}
-              style={{minHeight:52,borderRadius:10,padding:"5px 4px",background:bgDia,border:`2px solid ${isHoje?RE:borderDia}`,cursor:ps.length>0?"pointer":"default",position:"relative"}}>
-              <div style={{fontSize:11,fontWeight:isHoje?700:400,color:isHoje?RE:"#555",textAlign:"right",paddingRight:3}}>{d}</div>
-              {ps.length>0&&(
-                <div style={{display:"flex",flexWrap:"wrap",gap:2,marginTop:2,paddingLeft:2}}>
-                  {ps.slice(0,4).map((o,oi)=>(
-                    <div key={oi} style={{width:8,height:8,borderRadius:"50%",background:o.status==="entregue"?"#888":o.status==="pronto"?VE:o.status==="em_producao"?ROSA:AM}}/>
-                  ))}
-                  {ps.length>4&&<div style={{fontSize:8,color:RE,fontWeight:700}}>+{ps.length-4}</div>}
-                </div>
-              )}
-              {ps.length>0&&<div style={{position:"absolute",bottom:3,right:4,fontSize:9,fontWeight:700,color:temAtrasado?"#e05555":todosEntregues?"#888":RE}}>{ps.length}</div>}
-            </div>
-          );
-        })}
-      </div>
-      <div style={{display:"flex",gap:12,marginTop:12,flexWrap:"wrap"}}>
-        {[{c:AM,l:"Pendente"},{c:ROSA,l:"Em produção"},{c:VE,l:"Pronto"},{c:"#888",l:"Entregue"},{c:"#e05555",l:"Atrasado"}].map((x,i)=>(
-          <div key={i} style={{display:"flex",alignItems:"center",gap:4,fontSize:10,color:"#aaa"}}>
-            <div style={{width:8,height:8,borderRadius:"50%",background:x.c}}/>
-            {x.l}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function App(){
   const[view,setView]=useState("pedidos");
   const[orders,setOrders]=useState([]);
@@ -597,11 +498,6 @@ function App(){
     try{const s=localStorage.getItem("celinas-extras");return s?JSON.parse(s):[]}catch{return[];}
   });
   const[buscaPedido,setBuscaPedido]=useState("");
-  const[produzido,setProduzido]=useState(()=>{try{const s=localStorage.getItem("celinas-produzido");return s?JSON.parse(s):{}}catch(e){return{}}});
-  const setProduzidoQtd=(nome,qtd)=>{const key=nome.toLowerCase().trim();const novo={...produzido,[key]:Math.max(0,parseInt(qtd)||0)};setProduzido(novo);try{localStorage.setItem("celinas-produzido",JSON.stringify(novo));}catch(e){}};
-  
-  const[calendarDate,setCalendarDate]=useState(()=>new Date());
-  const[calendarModal,setCalendarModal]=useState(null); // date string clicked
 
   // Persiste extras e preços no localStorage sempre que mudarem
   useEffect(()=>{
@@ -705,40 +601,6 @@ function App(){
   },[orders]);
   const stData=useMemo(()=>Object.entries(ST).map(([k,v])=>({name:v.label,value:orders.filter(o=>o.status===k).length,color:v.color})).filter(d=>d.value>0),[orders]);
   const fatData=useMemo(()=>{const m={};orders.forEach(o=>{const mm=o.data_retirada?o.data_retirada.slice(0,7):"?";if(!m[mm])m[mm]={mes:mm,recebido:0,aReceber:0};const total=(o.valor||0)+(o.frete||0);o.pago?m[mm].recebido+=total:m[mm].aReceber+=total;});return Object.values(m).sort((a,b)=>a.mes>b.mes?1:-1).map(d=>({...d,mes:d.mes==="?"?"?":new Date(d.mes+"-01").toLocaleDateString("pt-BR",{month:"short",year:"2-digit"})}));},[orders]);
-  // Produção: total pedido, pronto, entregue e FALTA por produto
-  const producaoData=useMemo(()=>{
-    const m={}; // nome -> {total, pronto, entregue, emProducao, pendente}
-    const addQtd=(nome,qty,status)=>{
-      const key=nome.toLowerCase().trim();
-      if(!m[key])m[key]={nome,total:0,pendente:0,emProducao:0,pronto:0,entregue:0};
-      m[key].total+=qty;
-      if(status==="entregue")m[key].entregue+=qty;
-      else if(status==="pronto")m[key].pronto+=qty;
-      else if(status==="em_producao")m[key].emProducao+=qty;
-      else m[key].pendente+=qty;
-    };
-    orders.forEach(o=>{
-      parseItens(o.itens).forEach(({nome,qty})=>addQtd(nome,qty,o.status));
-    });
-    return Object.values(m)
-      .map(p=>{
-        const key=p.nome.toLowerCase().trim();
-        const jaFeito=parseInt(produzido[key])||0;
-        // jaFeito soma com pronto dos pedidos marcados
-        const prontoReal=Math.min(p.pronto+jaFeito, p.total-p.entregue);
-        const falta=Math.max(0,p.total-prontoReal-p.entregue);
-        const pct=p.total>0?Math.round((prontoReal+p.entregue)/p.total*100):0;
-        return{
-          ...p,
-          prontoReal,
-          jaFeito,
-          falta,
-          pct
-        };
-      })
-      .sort((a,b)=>b.falta-a.falta||b.total-a.total);
-  },[orders,produzido]);
-
   const cats=["Todas",...Array.from(new Set(cardapio.map(p=>p.cat)))];
 
   useEffect(()=>{
@@ -759,7 +621,7 @@ function App(){
             <div><div style={{fontSize:20,fontWeight:"bold",fontStyle:"italic",color:"#fff",letterSpacing:1}}>Celina's Cake</div><div style={{fontSize:9,letterSpacing:3,color:"rgba(255,255,255,.6)",textTransform:"uppercase"}}>🐣 Páscoa 2026 · {saving?"💾 salvando...":"✓ salvo"}</div></div>
           </div>
           <nav style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-            {[["dashboard","📊 Painel"],["producao","🏭 Produção"],["chocolate","🍫 Chocolate"],["whatsapp","💬 WhatsApp"],["pedidos","📋 Pedidos"],["cardapio","🎂 Cardápio"],["precos","💲 e Preços"]].map(([v,l])=>(
+            {[["dashboard","📊 Painel"],["whatsapp","💬 WhatsApp"],["pedidos","📋 Pedidos"],["cardapio","🍫 Cardápio"],["precos","💲 & Preços"]].map(([v,l])=>(
               <button key={v} onClick={()=>setView(v)} style={{padding:"7px 15px",borderRadius:20,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,background:view===v?"#fff":"rgba(255,255,255,.2)",color:view===v?RE:"#fff"}}>{l}</button>
             ))}
           </nav>
@@ -770,315 +632,19 @@ function App(){
         {atrasados.length>0&&(<div style={{background:"#fff0f0",border:"2px solid #e05555",borderRadius:16,padding:"14px 18px",marginBottom:20}}><div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}><span style={{fontSize:22}}>🚨</span><div style={{fontWeight:700,color:"#e05555",fontSize:15}}>{atrasados.length} pedido(s) atrasado(s)!</div></div>{atrasados.map(o=>(<div key={o.id} style={{background:"#fff",borderRadius:10,padding:"10px 14px",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",borderLeft:"4px solid #e05555",marginBottom:6}}><div style={{flex:1}}><span style={{fontWeight:700,fontSize:13}}>{o.cliente}</span><span style={{fontSize:12,color:"#aaa",marginLeft:8}}>{o.itens}</span></div><span style={{fontSize:11,color:"#e05555",fontWeight:700}}>{Math.abs(getDias(o.data_retirada,agora))}d atrasado</span><button onClick={()=>updSt(o.id,"entregue")} style={{padding:"4px 10px",borderRadius:8,border:"none",background:"#e05555",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer"}}>Marcar entregue</button></div>))}</div>)}
 
         {view==="whatsapp"&&<WhatsAppPage onSave={saveOrder}/>}
-
-\        {view==="producao"&&(
-          <div>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,flexWrap:"wrap",gap:12}}>
-              <div>
-                <h2 style={{margin:0,fontSize:20,color:RE}}>🏭 Controle de Produção</h2>
-                <p style={{margin:"4px 0 0",fontSize:12,color:"#aaa"}}>Baseado nos status dos pedidos — atualiza em tempo real</p>
-              </div>
-            </div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))",gap:12,marginBottom:24}}>
-              {[
-                {label:"Total pedido",value:producaoData.reduce((s,p)=>s+p.total,0),icon:"🥚",color:ROSA,bg:"#fff0f5"},
-                {label:"✅ Prontos",value:producaoData.reduce((s,p)=>s+p.prontoReal,0),icon:"✅",color:VE,bg:"#eaf5f1"},
-                {label:"🎁 Entregues",value:producaoData.reduce((s,p)=>s+p.entregue,0),icon:"🎁",color:"#888",bg:"#f5f5f5"},
-                {label:"⚠️ Falta",value:producaoData.reduce((s,p)=>s+p.falta,0),icon:"⚠️",color:RE,bg:RC},
-              ].map((c,i)=>(
-                <div key={i} style={{background:c.bg,borderRadius:14,padding:"16px 14px",borderLeft:`4px solid ${c.color}`}}>
-                  <div style={{fontSize:20}}>{c.icon}</div>
-                  <div style={{fontSize:22,fontWeight:"bold",color:c.color,marginTop:4}}>{c.value}</div>
-                  <div style={{fontSize:11,color:"#aaa",marginTop:2}}>{c.label}</div>
-                </div>
-              ))}
-            </div>
-            <div style={{background:"#fff",borderRadius:18,overflow:"hidden",boxShadow:"0 2px 14px rgba(180,48,74,.07)"}}>
-              <div style={{background:`linear-gradient(135deg,${RE},${ROSA})`,padding:"12px 18px",display:"grid",gridTemplateColumns:"1fr 55px 55px 55px 60px 70px 90px 80px",gap:6,alignItems:"center"}}>
-                {["🥚 Produto","Total","Pend.","Prod.","Pronto","Entregue","👩‍🍳 Já prod.","⚠️ Falta"].map((h,i)=>(
-                  <div key={i} style={{color:"#fff",fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:.5,textAlign:i===0?"left":"center"}}>{h}</div>
-                ))}
-              </div>
-              {producaoData.length===0?(
-                <div style={{padding:"40px 0",textAlign:"center",color:"#ccc",fontSize:13}}>Nenhum pedido ainda</div>
-              ):(
-                producaoData.map((p,i)=>(
-                  <div key={i} style={{display:"grid",gridTemplateColumns:"1fr 55px 55px 55px 60px 70px 90px 80px",gap:6,alignItems:"center",padding:"11px 18px",borderBottom:"1px solid #fce4ec",background:i%2===0?"#fff":"#fdf4f6",borderLeft:`4px solid ${p.falta===0?VE:p.pct>=50?AM:RE}`}}>
-                    <div>
-                      <div style={{fontSize:12,fontWeight:600,color:"#333"}}>{p.nome}</div>
-                      <div style={{marginTop:4,height:5,borderRadius:4,background:"#f0dde4",overflow:"hidden"}}>
-                        <div style={{height:"100%",borderRadius:4,width:`${p.pct}%`,background:p.falta===0?VE:p.pct>=50?AM:RE}}/>
-                      </div>
-                      <div style={{fontSize:9,color:"#bbb",marginTop:2}}>{p.pct}% concluído</div>
-                    </div>
-                    <div style={{textAlign:"center",fontWeight:700,fontSize:13,color:"#555"}}>{p.total}</div>
-                    <div style={{textAlign:"center",fontSize:12,color:p.pendente>0?"#e8b86d":"#ccc",fontWeight:p.pendente>0?700:400}}>{p.pendente||"—"}</div>
-                    <div style={{textAlign:"center",fontSize:12,color:p.emProducao>0?ROSA:"#ccc",fontWeight:p.emProducao>0?700:400}}>{p.emProducao||"—"}</div>
-                    <div style={{textAlign:"center",fontSize:12,color:p.prontoReal>0?VE:"#ccc",fontWeight:p.prontoReal>0?700:400}}>{p.prontoReal||"—"}</div>
-                    <div style={{textAlign:"center",fontSize:12,color:p.entregue>0?"#888":"#ccc",fontWeight:p.entregue>0?700:400}}>{p.entregue||"—"}</div>
-                    <div style={{textAlign:"center"}}>
-                      <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>
-                        <button onClick={()=>setProduzidoQtd(p.nome,(produzido[p.nome.toLowerCase().trim()]||0)-1)} style={{width:20,height:20,borderRadius:"50%",border:`1px solid ${RM}`,background:"#fff",color:RE,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
-                        <input type="number" min="0" value={produzido[p.nome.toLowerCase().trim()]||0} onChange={e=>setProduzidoQtd(p.nome,e.target.value)} style={{width:36,textAlign:"center",border:`1.5px solid ${RM}`,borderRadius:6,fontSize:12,padding:"2px 0",outline:"none",fontWeight:700,color:RE}} />
-                        <button onClick={()=>setProduzidoQtd(p.nome,(produzido[p.nome.toLowerCase().trim()]||0)+1)} style={{width:20,height:20,borderRadius:"50%",border:"none",background:RE,color:"#fff",fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
-                      </div>
-                      <div style={{fontSize:9,color:"#bbb",marginTop:2}}>{Math.min(produzido[p.nome.toLowerCase().trim()]||0,p.total)}/{p.total}</div>
-                    </div>
-                    <div style={{textAlign:"center"}}>
-                      {p.falta===0
-                        ?<span style={{padding:"3px 10px",borderRadius:20,background:"#eaf5f1",color:VE,fontSize:11,fontWeight:700}}>✅ OK</span>
-                        :<span style={{padding:"3px 10px",borderRadius:20,background:p.pct>=50?"#fffbe6":RC,color:p.pct>=50?AM:RE,fontSize:12,fontWeight:700}}>{p.falta} un.</span>
-                      }
-                    </div>
-                  </div>
-                ))
-              )}
-              {producaoData.length>0&&(
-                <div style={{display:"grid",gridTemplateColumns:"1fr 55px 55px 55px 60px 70px 90px 80px",gap:6,alignItems:"center",padding:"12px 18px",background:RC,borderTop:`2px solid ${RM}`}}>
-                  <div style={{fontSize:11,fontWeight:700,color:RE}}>TOTAL GERAL</div>
-                  <div style={{textAlign:"center",fontWeight:700,fontSize:13,color:RE}}>{producaoData.reduce((s,p)=>s+p.total,0)}</div>
-                  <div style={{textAlign:"center",fontWeight:700,fontSize:12,color:"#e8b86d"}}>{producaoData.reduce((s,p)=>s+p.pendente,0)||"—"}</div>
-                  <div style={{textAlign:"center",fontWeight:700,fontSize:12,color:ROSA}}>{producaoData.reduce((s,p)=>s+p.emProducao,0)||"—"}</div>
-                  <div style={{textAlign:"center",fontWeight:700,fontSize:12,color:VE}}>{producaoData.reduce((s,p)=>s+p.prontoReal,0)||"—"}</div>
-                  <div style={{textAlign:"center",fontWeight:700,fontSize:12,color:"#888"}}>{producaoData.reduce((s,p)=>s+p.entregue,0)||"—"}</div>
-                  <div style={{textAlign:"center",fontWeight:700,fontSize:12,color:RE}}>{Object.values(produzido).reduce((s,v)=>s+(parseInt(v)||0),0)||"—"}</div>
-                  <div style={{textAlign:"center"}}>{producaoData.reduce((s,p)=>s+p.falta,0)===0?<span style={{padding:"3px 10px",borderRadius:20,background:"#eaf5f1",color:VE,fontSize:11,fontWeight:700}}>✅ OK</span>:<span style={{padding:"3px 10px",borderRadius:20,background:RC,color:RE,fontSize:12,fontWeight:700}}>{producaoData.reduce((s,p)=>s+p.falta,0)} un.</span>}</div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
         {view==="precos"&&<PrecosPage cardapio={cardapio} precos={precos} setPrecos={setPrecos} extrasCardapio={extrasCardapio} setExtrasCardapio={setExtrasCardapio}/>}
 
         {view==="dashboard"&&(<>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:14,marginBottom:24}}>
-            {[
-              {label:"Em Aberto",value:totalPendentes,icon:"⏳",color:"#d4900a",bg:"#fdf6e3",border:"#f5c842",sub:"pedidos pendentes",isVal:false},
-              {label:"Prontos",value:totalProntos,icon:"✅",color:VE,bg:"#eaf5f1",border:"#4caf50",sub:"aguardando retirada",isVal:false},
-              {label:"Entregues",value:orders.filter(o=>o.status==="entregue").length,icon:"🎁",color:"#666",bg:"#f5f5f5",border:"#bbb",sub:"pedidos concluídos",isVal:false},
-              {label:"Total Pedidos",value:orders.length,icon:"🎂",color:ROSA,bg:"#fff0f5",border:RM,sub:"desde o início",isVal:false},
-              {label:"Recebido",value:fmt(totalRecebido),icon:"💰",color:"#1a7a4a",bg:"#eaf5f1",border:"#4caf50",sub:"já pago pelos clientes",isVal:true},
-              {label:"A Receber",value:fmt(totalAReceber),icon:"⚠️",color:RE,bg:RC,border:RM,sub:"ainda em aberto",isVal:true},
-              {label:"Total Geral",value:fmt(totalRecebido+totalAReceber),icon:"📈",color:"#2c3e6b",bg:"#eef2ff",border:"#6979d4",sub:"volume total de vendas",isVal:true},
-            ].map((c,i)=>(
-              <div key={i} style={{background:c.bg,borderRadius:18,padding:"20px 18px",border:`1.5px solid ${c.border}`,boxShadow:"0 2px 12px rgba(0,0,0,.06)",display:"flex",flexDirection:"column",gap:4}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-                  <div style={{fontSize:11,fontWeight:700,color:c.color,textTransform:"uppercase",letterSpacing:.8}}>{c.label}</div>
-                  <span style={{fontSize:20}}>{c.icon}</span>
-                </div>
-                <div style={{fontSize:c.isVal?20:28,fontWeight:700,color:c.color,lineHeight:1.1,marginTop:4}}>{c.value}</div>
-                <div style={{fontSize:10,color:"#aaa",marginTop:2}}>{c.sub}</div>
-              </div>
-            ))}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(175px,1fr))",gap:14,marginBottom:24}}>
+            {[{label:"Em Aberto",value:totalPendentes,icon:"⏳",color:"#e8b86d",bg:"#fdf6e3"},{label:"Prontos",value:totalProntos,icon:"✅",color:VE,bg:"#eaf5f1"},{label:"Recebido",value:fmt(totalRecebido),icon:"💰",color:VE,bg:"#eaf5f1"},{label:"A Receber",value:fmt(totalAReceber),icon:"⚠️",color:RE,bg:RC},{label:"Total",value:orders.length,icon:"🎂",color:ROSA,bg:"#fff0f5"}].map((c,i)=>(<div key={i} style={{background:c.bg,borderRadius:16,padding:"18px 16px",borderLeft:`4px solid ${c.color}`}}><div style={{fontSize:22}}>{c.icon}</div><div style={{fontSize:20,fontWeight:"bold",color:c.color,marginTop:4}}>{c.value}</div><div style={{fontSize:11,color:"#aaa",marginTop:2}}>{c.label}</div></div>))}
           </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18,marginBottom:18}}>
             {[{t:"🏆 Qtd. por Produto",c:<ResponsiveContainer width="100%" height={340}><BarChart data={prodData} layout="vertical" margin={{left:0,right:16}}><XAxis type="number" tick={{fontSize:10}}/><YAxis type="category" dataKey="name" tick={{fontSize:9}} width={150}/><Tooltip formatter={v=>[`${v} unid.`]}/><Bar dataKey="qty" radius={[0,8,8,0]}>{prodData.map((_,i)=><Cell key={i} fill={PAL[i%PAL.length]}/>)}</Bar></BarChart></ResponsiveContainer>},{t:"📌 Status",c:<ResponsiveContainer width="100%" height={200}><PieChart><Pie data={stData} cx="50%" cy="50%" innerRadius={50} outerRadius={85} paddingAngle={4} dataKey="value" label={({name,value})=>`${name}: ${value}`} labelLine={false}>{stData.map((d,i)=><Cell key={i} fill={d.color}/>)}</Pie><Tooltip/></PieChart></ResponsiveContainer>},{t:"📈 Faturamento por Mês",c:<ResponsiveContainer width="100%" height={200}><BarChart data={fatData}><CartesianGrid strokeDasharray="3 3" stroke="#fce4ec"/><XAxis dataKey="mes" tick={{fontSize:11}}/><YAxis tick={{fontSize:11}} tickFormatter={v=>`R$${v}`}/><Tooltip formatter={(v,n)=>[fmt(v),n==="recebido"?"Recebido":"A Receber"]}/><Legend formatter={v=>v==="recebido"?"Recebido":"A Receber"}/><Bar dataKey="recebido" fill={VE} radius={[6,6,0,0]}/><Bar dataKey="aReceber" fill={AM} radius={[6,6,0,0]}/></BarChart></ResponsiveContainer>},{t:"💵 Receita por Produto",c:<ResponsiveContainer width="100%" height={340}><BarChart data={valData} layout="vertical" margin={{left:0,right:16}}><XAxis type="number" tick={{fontSize:10}} tickFormatter={v=>`R$${v}`}/><YAxis type="category" dataKey="name" tick={{fontSize:9}} width={150}/><Tooltip formatter={v=>[fmt(v)]}/><Bar dataKey="total" radius={[0,8,8,0]}>{valData.map((_,i)=><Cell key={i} fill={PAL[i%PAL.length]}/>)}</Bar></BarChart></ResponsiveContainer>}].map((c,i)=>(<div key={i} style={{background:"#fff",borderRadius:18,padding:20,boxShadow:"0 2px 14px rgba(180,48,74,.07)"}}><h3 style={{margin:"0 0 14px",fontSize:14,color:RE}}>{c.t}</h3>{c.c}</div>))}
           </div>
-          <CalendarioEntregas orders={orders} agora={agora} calendarDate={calendarDate} setCalendarDate={setCalendarDate} setCalendarModal={setCalendarModal} getDias={getDias} getPrazo={getPrazo} getBadge={getBadge}/>
+          <div style={{background:"#fff",borderRadius:18,padding:20}}><h3 style={{margin:"0 0 14px",fontSize:14,color:RE}}>📅 Próximas Entregas</h3>{orders.filter(o=>o.status!=="entregue"&&o.data_retirada).sort((a,b)=>a.data_retirada>b.data_retirada?1:-1).slice(0,6).length===0?<div style={{color:"#ccc",fontSize:13}}>Nenhuma agendada</div>:orders.filter(o=>o.status!=="entregue"&&o.data_retirada).sort((a,b)=>a.data_retirada>b.data_retirada?1:-1).slice(0,6).map(o=>{const prazo=getPrazo(getDias(o.data_retirada,agora),o.status);const bp=getBadge(o);return(<div key={o.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:"1px solid #fce4ec",flexWrap:"wrap"}}><span style={{fontSize:18}}>{ST[o.status]?.icon}</span><div style={{flex:1}}><div style={{fontWeight:700,fontSize:13}}>{o.cliente}</div><div style={{fontSize:11,color:"#aaa"}}>{o.itens}</div></div><div style={{fontSize:12,color:RE,fontWeight:700}}>{new Date(o.data_retirada+"T12:00").toLocaleDateString("pt-BR")}</div>{prazo&&<span style={{padding:"2px 8px",borderRadius:20,fontSize:11,fontWeight:700,background:prazo.bg,color:prazo.color}}>{prazo.icon} {prazo.label}</span>}<span style={{padding:"2px 8px",borderRadius:20,fontSize:11,fontWeight:700,background:bp.bg,color:bp.color}}>{bp.text}</span></div>);})}</div>
         </>)}
 
-        {view==="chocolate"&&(
-          <div>
-            <div style={{marginBottom:20}}>
-              <h2 style={{margin:0,fontSize:20,color:RE}}>🍫 Chocolate e Fatias</h2>
-              <p style={{margin:"4px 0 0",fontSize:12,color:"#aaa"}}>Calculado automaticamente baseado nos pedidos</p>
-            </div>
-
-            {(()=>{
-              // Calcular chocolate e fatias
-              const choc={leite:0,branco:0,zero:0};
-              const produtos=[];
-
-              producaoData.forEach(p=>{
-                const info=getChocInfo(p.nome);
-                const tipo=getChocTipo(p.nome);
-                const grChoc=info.gramas;
-                const fatiasPorUnidade=info.fatias;
-                const isFatia=info.isFatia;
-
-                if(!grChoc)return;
-
-                const totalOvos=p.total;
-                const entregues=p.entregue||0;
-                const pendentes=totalOvos-entregues;
-                const totalGChoc=grChoc*totalOvos;
-                const fatiasTotal=fatiasPorUnidade*totalOvos;
-                const fatiasEntregues=fatiasPorUnidade*entregues;
-                const fatiasPendentes=fatiasPorUnidade*pendentes;
-
-                // Fatias ja produzidas (do localStorage)
-                const keyProd=p.nome.toLowerCase().trim();
-                const jaFeito=parseInt(produzido[keyProd])||0;
-                const fatiasFalta=isFatia?Math.max(0,fatiasPendentes-jaFeito*fatiasPorUnidade):0;
-
-                produtos.push({
-                  nome:p.nome, tipo, grChoc, totalOvos, entregues, pendentes,
-                  totalGChoc, isFatia, fatiasPorUnidade,
-                  fatiasTotal, fatiasEntregues, fatiasPendentes, fatiasFalta,
-                  jaFeito, keyProd
-                });
-
-                if(tipo==="misto"){choc.leite+=totalGChoc/2;choc.branco+=totalGChoc/2;}
-                else{choc[tipo]=(choc[tipo]||0)+totalGChoc;}
-              });
-
-              const totalChoc=choc.leite+choc.branco+choc.zero;
-              const fmtKg=(g)=>{if(g<=0)return"0g";if(g>=1000)return(g/1000).toFixed(2).replace(".",",")+"kg";return Math.round(g)+"g";};
-              const fatiasProd=produtos.filter(p=>p.isFatia);
-              const totalFatiasNec=fatiasProd.reduce((s,p)=>s+p.fatiasPendentes,0);
-              const totalFatiasEntregues=fatiasProd.reduce((s,p)=>s+p.fatiasEntregues,0);
-
-              return(<>
-
-                {/* Cards principais */}
-                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(170px,1fr))",gap:12,marginBottom:20}}>
-                  {[
-                    {label:"🍫 Ao Leite",v:choc.leite,cor:"#6d3a1f",bg:"#fff5e6"},
-                    {label:"🤍 Branco",v:choc.branco,cor:"#9a7b00",bg:"#fffde7"},
-                    {label:"💚 Zero Açúcar",v:choc.zero,cor:"#1b5e20",bg:"#e8f5e9"},
-                    {label:"📦 Total",v:totalChoc,cor:RE,bg:RC},
-                  ].map((c,i)=>(
-                    <div key={i} style={{background:c.bg,borderRadius:16,padding:"16px",borderLeft:`4px solid ${c.cor}`}}>
-                      <div style={{fontSize:12,color:c.cor,fontWeight:700,marginBottom:6}}>{c.label}</div>
-                      <div style={{fontSize:26,fontWeight:700,color:c.cor,lineHeight:1}}>{fmtKg(c.v)}</div>
-                      <div style={{fontSize:11,color:"#999",marginTop:4}}>{Math.ceil(c.v/1000)} barra(s) de 1kg</div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Card fatias destaque */}
-                {fatiasProd.length>0&&(
-                  <div style={{background:"#fff",borderRadius:18,padding:20,marginBottom:20,border:`2px solid ${RM}`,boxShadow:"0 2px 14px rgba(180,48,74,.07)"}}>
-                    <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16,flexWrap:"wrap"}}>
-                      <span style={{fontSize:28}}>🍰</span>
-                      <div>
-                        <div style={{fontSize:16,fontWeight:700,color:RE}}>Controle de Fatias</div>
-                        <div style={{fontSize:11,color:"#aaa"}}>Ovo Fatia 700g · 6 fatias por ovo · 70g chocolate por fatia</div>
-                      </div>
-                    </div>
-
-                    {/* Cards fatias */}
-                    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:10,marginBottom:16}}>
-                      {[
-                        {label:"Total pedido",v:fatiasProd.reduce((s,p)=>s+p.fatiasTotal,0),cor:"#555",bg:"#f5f5f5"},
-                        {label:"Já entregues",v:totalFatiasEntregues,cor:"#888",bg:"#f0f0f0"},
-                        {label:"A produzir",v:totalFatiasNec,cor:RE,bg:RC},
-                      ].map((c,i)=>(
-                        <div key={i} style={{background:c.bg,borderRadius:12,padding:"12px 14px",textAlign:"center"}}>
-                          <div style={{fontSize:11,color:c.cor,marginBottom:4}}>{c.label}</div>
-                          <div style={{fontSize:24,fontWeight:700,color:c.cor}}>{c.v}</div>
-                          <div style={{fontSize:10,color:"#aaa"}}>fatias</div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Por produto Ovo Fatia */}
-                    {fatiasProd.map((p,i)=>{
-                      const jaFatiasFeitas=(produzido[p.keyProd]||0)*p.fatiasPorUnidade;
-                      const faltamFatias=Math.max(0,p.fatiasPendentes-jaFatiasFeitas);
-                      const pct=p.fatiasPendentes>0?Math.round(jaFatiasFeitas/p.fatiasPendentes*100):100;
-                      return(
-                        <div key={i} style={{background:"#fdf4f6",borderRadius:14,padding:"14px 16px",marginBottom:10}}>
-                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10,flexWrap:"wrap",gap:8}}>
-                            <div>
-                              <div style={{fontSize:13,fontWeight:700,color:"#333"}}>{p.nome}</div>
-                              <div style={{fontSize:11,color:"#aaa"}}>{p.totalOvos} ovos pedidos · {p.entregues} entregues · {p.pendentes} a fazer</div>
-                            </div>
-                            <div style={{textAlign:"right"}}>
-                              <div style={{fontSize:11,color:"#888"}}>Chocolate desta linha</div>
-                              <div style={{fontSize:14,fontWeight:700,color:"#6d3a1f"}}>{fmtKg(p.totalGChoc)}</div>
-                            </div>
-                          </div>
-
-                          {/* Barra progresso */}
-                          <div style={{height:8,borderRadius:4,background:"#f0dde4",overflow:"hidden",marginBottom:8}}>
-                            <div style={{height:"100%",borderRadius:4,width:`${Math.min(pct,100)}%`,background:pct>=100?VE:pct>=50?AM:RE,transition:"width .3s"}}/>
-                          </div>
-                          <div style={{fontSize:10,color:"#bbb",marginBottom:12}}>{pct}% produzido</div>
-
-                          {/* Grid fatias */}
-                          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:12}}>
-                            {[
-                              {label:"Total fatias",v:p.fatiasTotal,cor:"#555"},
-                              {label:"Já entregues",v:p.fatiasEntregues,cor:"#888"},
-                              {label:"Ainda necessárias",v:p.fatiasPendentes,cor:RE},
-                            ].map((c,ci)=>(
-                              <div key={ci} style={{background:"#fff",borderRadius:10,padding:"10px",textAlign:"center",border:`1px solid ${RM}`}}>
-                                <div style={{fontSize:10,color:"#aaa",marginBottom:2}}>{c.label}</div>
-                                <div style={{fontSize:20,fontWeight:700,color:c.cor}}>{c.v}</div>
-                                <div style={{fontSize:9,color:"#ccc"}}>fatias</div>
-                              </div>
-                            ))}
-                          </div>
-
-                          {/* Campo já produzidas */}
-                          <div style={{background:"#fff",borderRadius:12,padding:"12px 14px",border:`1.5px solid ${RM}`}}>
-                            <div style={{fontSize:11,color:"#888",marginBottom:8,fontWeight:700}}>👩‍🍳 Fatias já produzidas</div>
-                            <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
-                              <button onClick={()=>setProduzidoQtd(p.nome,Math.max(0,(produzido[p.keyProd]||0)-1))} style={{width:32,height:32,borderRadius:"50%",border:`1.5px solid ${RM}`,background:"#fff",color:RE,fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700}}>−</button>
-                              <div style={{textAlign:"center"}}>
-                                <div style={{fontSize:11,color:"#aaa"}}>ovos prontos</div>
-                                <input type="number" min="0" max={p.pendentes} value={produzido[p.keyProd]||0} onChange={e=>setProduzidoQtd(p.nome,e.target.value)} style={{width:60,textAlign:"center",border:`1.5px solid ${RE}`,borderRadius:8,fontSize:18,padding:"4px",outline:"none",fontWeight:700,color:RE}}/>
-                              </div>
-                              <button onClick={()=>setProduzidoQtd(p.nome,Math.min(p.pendentes,(produzido[p.keyProd]||0)+1))} style={{width:32,height:32,borderRadius:"50%",border:"none",background:RE,color:"#fff",fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700}}>+</button>
-                              <div style={{flex:1,textAlign:"center",background:faltamFatias===0?"#eaf5f1":RC,borderRadius:12,padding:"10px 14px"}}>
-                                <div style={{fontSize:11,color:"#888"}}>Fatias já feitas</div>
-                                <div style={{fontSize:22,fontWeight:700,color:faltamFatias===0?VE:RE}}>{jaFatiasFeitas}</div>
-                              </div>
-                              <div style={{flex:1,textAlign:"center",background:faltamFatias===0?"#eaf5f1":"#fff8ec",borderRadius:12,padding:"10px 14px",border:`1px solid ${faltamFatias===0?VE:AM}`}}>
-                                <div style={{fontSize:11,color:"#888"}}>Faltam</div>
-                                <div style={{fontSize:22,fontWeight:700,color:faltamFatias===0?VE:AM}}>{faltamFatias===0?"✅ OK":faltamFatias}</div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* Tabela outros produtos */}
-                {produtos.filter(p=>!p.isFatia).length>0&&(
-                  <div style={{background:"#fff",borderRadius:18,overflow:"hidden",boxShadow:"0 2px 14px rgba(180,48,74,.07)"}}>
-                    <div style={{background:`linear-gradient(135deg,${RE},${ROSA})`,padding:"12px 18px"}}>
-                      <div style={{color:"#fff",fontSize:13,fontWeight:700}}>🍫 Outros produtos com chocolate</div>
-                    </div>
-                    <div style={{padding:"0 18px"}}>
-                      {produtos.filter(p=>!p.isFatia).sort((a,b)=>b.totalGChoc-a.totalGChoc).map((p,i)=>(
-                        <div key={i} style={{display:"flex",alignItems:"center",gap:12,padding:"11px 0",borderBottom:"1px solid #fce4ec",flexWrap:"wrap"}}>
-                          <div style={{flex:1,fontSize:13,color:"#333",fontWeight:500}}>{p.nome}</div>
-                          <span style={{fontSize:11,color:"#aaa"}}>{p.grChoc}g x {p.totalOvos} un.</span>
-                          <span style={{fontSize:13,fontWeight:700,color:"#6d3a1f",minWidth:70,textAlign:"right"}}>{fmtKg(p.totalGChoc)}</span>
-                          <span style={{padding:"3px 10px",borderRadius:20,fontSize:10,fontWeight:700,
-                            background:p.tipo==="branco"?"#fffde7":p.tipo==="zero"?"#e8f5e9":p.tipo==="misto"?"#f3e5f5":"#fff5e6",
-                            color:p.tipo==="branco"?"#9a7b00":p.tipo==="zero"?"#1b5e20":p.tipo==="misto"?"#6a0dad":"#6d3a1f"
-                          }}>{p.tipo==="misto"?"½+½":p.tipo==="zero"?"zero":p.tipo==="branco"?"branco":"leite"}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Resumo compra */}
-                {totalChoc>0&&(
-                  <div style={{background:"#fff",borderRadius:16,padding:18,marginTop:16,boxShadow:"0 2px 10px rgba(0,0,0,.05)"}}>
-                    <div style={{fontWeight:700,fontSize:14,color:RE,marginBottom:12}}>🛒 Resumo para compra</div>
-                    {choc.leite>0&&<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:"1px solid #fce4ec"}}><span style={{fontSize:13}}>🍫 Chocolate ao Leite</span><span style={{fontWeight:700,color:"#6d3a1f",fontSize:14}}>{fmtKg(choc.leite)} → <b>{Math.ceil(choc.leite/1000)} barra(s)</b></span></div>}
-                    {choc.branco>0&&<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:"1px solid #fce4ec"}}><span style={{fontSize:13}}>🤍 Chocolate Branco</span><span style={{fontWeight:700,color:"#9a7b00",fontSize:14}}>{fmtKg(choc.branco)} → <b>{Math.ceil(choc.branco/1000)} barra(s)</b></span></div>}
-                    {choc.zero>0&&<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:"1px solid #fce4ec"}}><span style={{fontSize:13}}>💚 Chocolate Zero Açúcar</span><span style={{fontWeight:700,color:"#1b5e20",fontSize:14}}>{fmtKg(choc.zero)} → <b>{Math.ceil(choc.zero/1000)} barra(s)</b></span></div>}
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 0",marginTop:4}}>
-                      <span style={{fontWeight:700,fontSize:15,color:RE}}>📦 Total a comprar</span>
-                      <span style={{fontWeight:700,fontSize:16,color:RE}}>{fmtKg(totalChoc)} → <b>{Math.ceil(totalChoc/1000)} barras</b></span>
-                    </div>
-                  </div>
-                )}
-
-              </>);
-            })()}
-          </div>
-        )}
-
-                {view==="cardapio"&&(<>
+        {view==="cardapio"&&(<>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,flexWrap:"wrap",gap:12}}>
             <div><h2 style={{margin:0,fontSize:20,color:RE}}>🍫 Tabela de Páscoa 2026</h2><p style={{margin:"4px 0 0",fontSize:12,color:"#aaa"}}>Trabalhamos apenas com chocolate Nobre</p></div>
             <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{cats.map(c=><button key={c} onClick={()=>setCatFiltro(c)} style={{padding:"5px 12px",borderRadius:20,border:"2px solid",borderColor:catFiltro===c?RE:"#f0dde4",background:catFiltro===c?RE:"#fff",color:catFiltro===c?"#fff":"#888",fontSize:11,fontWeight:700,cursor:"pointer"}}>{c}</button>)}</div>
@@ -1160,48 +726,6 @@ function App(){
         </>)}
       </main>
 
-      {/* Modal do calendário — pedidos do dia clicado */}
-      {calendarModal&&(
-        <div style={{position:"fixed",inset:0,background:"rgba(180,48,74,.22)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:950,padding:16}} onClick={()=>setCalendarModal(null)}>
-          <div style={{background:"#fff",borderRadius:20,padding:24,width:"100%",maxWidth:520,boxShadow:"0 8px 40px rgba(180,48,74,.2)",maxHeight:"80vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-              <h3 style={{margin:0,color:RE,fontSize:16}}>📅 {new Date(calendarModal+"T12:00").toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long"})}</h3>
-              <button onClick={()=>setCalendarModal(null)} style={{background:"none",border:"none",fontSize:22,cursor:"pointer",color:"#ccc"}}>×</button>
-            </div>
-            {(orders.filter(o=>o.data_retirada===calendarModal)).length===0
-              ?<div style={{color:"#ccc",fontSize:13,textAlign:"center",padding:"20px 0"}}>Nenhum pedido neste dia</div>
-              :orders.filter(o=>o.data_retirada===calendarModal).map(o=>{
-                const st=ST[o.status]||ST.pendente;
-                const bp=getBadge(o);
-                const prazo=getPrazo(getDias(o.data_retirada,agora),o.status);
-                return(
-                  <div key={o.id} style={{background:"#fdf4f6",borderRadius:14,padding:"12px 14px",marginBottom:10,borderLeft:`4px solid ${st.color}`}}>
-                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6,flexWrap:"wrap"}}>
-                      <span style={{fontSize:16}}>{st.icon}</span>
-                      <span style={{fontWeight:700,fontSize:14}}>{o.cliente}</span>
-                      <span style={{padding:"2px 8px",borderRadius:20,fontSize:11,fontWeight:700,background:st.bg,color:st.color}}>{st.label}</span>
-                      <span style={{padding:"2px 8px",borderRadius:20,fontSize:11,fontWeight:700,background:bp.bg,color:bp.color}}>{bp.text}</span>
-                      {prazo&&<span style={{padding:"2px 8px",borderRadius:20,fontSize:11,fontWeight:700,background:prazo.bg,color:prazo.color}}>{prazo.icon} {prazo.label}</span>}
-                    </div>
-                    <div style={{fontSize:12,color:"#555",marginBottom:4}}>🥚 {o.itens}</div>
-                    <div style={{display:"flex",gap:12,fontSize:11,color:"#aaa",flexWrap:"wrap"}}>
-                      {o.telefone&&<span>📞 {o.telefone}</span>}
-                      {o.valor&&<span>💵 {fmt((o.valor||0)+(o.frete||0))}</span>}
-                      {o.tipo_entrega==="entrega"&&<span>🚚 Entrega{o.endereco?`: ${o.endereco}`:""}</span>}
-                    </div>
-                    {o.observacoes&&<div style={{marginTop:4,fontSize:11,color:"#bbb",fontStyle:"italic"}}>📝 {o.observacoes}</div>}
-                    <div style={{display:"flex",gap:6,marginTop:10,flexWrap:"wrap"}}>
-                      {Object.entries(ST).map(([k,v])=>(
-                        <button key={k} onClick={()=>{updSt(o.id,k);}} style={{padding:"4px 10px",borderRadius:8,border:"1.5px solid",borderColor:o.status===k?v.color:"#f0dde4",background:o.status===k?v.bg:"#fff",color:o.status===k?v.color:"#bbb",fontSize:10,fontWeight:700,cursor:"pointer"}}>{v.icon} {v.label}</button>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })
-            }
-          </div>
-        </div>
-      )}
       {form!==null&&<FormModal initial={form} onSave={saveOrder} onClose={()=>setForm(null)} cardapio={cardapio}/>}
       {toast&&<div style={{position:"fixed",bottom:24,right:24,padding:"12px 20px",borderRadius:12,background:toast.type==="err"?"#e07070":RE,color:"#fff",fontSize:14,fontWeight:700,boxShadow:"0 4px 20px rgba(0,0,0,.15)",zIndex:999}}>{toast.msg}</div>}
     </div>
