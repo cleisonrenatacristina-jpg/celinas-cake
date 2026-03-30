@@ -843,18 +843,25 @@ function App(){
               </div>
             </div>
             {(()=>{
-              const getGramas=(nome)=>{
+              const getInfo=(nome)=>{
                 const n=nome.toLowerCase();
+                // Ovo Fatia: 6 fatias por ovo, cada fatia = 70g chocolate
+                if(n.includes("fatia")){
+                  const fatiasPorOvo=6;
+                  const gChocPorFatia=70;
+                  return{gramas:gChocPorFatia*fatiasPorOvo, fatias:fatiasPorOvo, isFatia:true};
+                }
+                // Extrai gramas do nome
                 const m=n.match(/(\d+)\s*g/);
-                if(m)return parseInt(m[1]);
-                if(n.includes("brigadeiro"))return 8;
-                if(n.includes("brownie"))return 30;
-                if(n.includes("bem casado"))return 20;
-                if(n.includes("trufinha"))return 15;
-                if(n.includes("bombom"))return 15;
-                if(n.includes("copinho"))return 20;
-                if(n.includes("conchinha"))return 15;
-                return 0;
+                if(m)return{gramas:parseInt(m[1]),fatias:0,isFatia:false};
+                if(n.includes("brigadeiro"))return{gramas:8,fatias:0,isFatia:false};
+                if(n.includes("brownie"))return{gramas:30,fatias:0,isFatia:false};
+                if(n.includes("bem casado"))return{gramas:20,fatias:0,isFatia:false};
+                if(n.includes("trufinha"))return{gramas:15,fatias:0,isFatia:false};
+                if(n.includes("bombom"))return{gramas:15,fatias:0,isFatia:false};
+                if(n.includes("copinho"))return{gramas:20,fatias:0,isFatia:false};
+                if(n.includes("conchinha"))return{gramas:15,fatias:0,isFatia:false};
+                return{gramas:0,fatias:0,isFatia:false};
               };
               const getTipo=(nome)=>{
                 const n=nome.toLowerCase();
@@ -865,12 +872,15 @@ function App(){
               };
               const choc={leite:0,branco:0,zero:0};
               const detalhe=[];
+              let totalFatias=0;
               producaoData.forEach(p=>{
-                const g=getGramas(p.nome);
-                if(!g)return;
+                const info=getInfo(p.nome);
+                if(!info.gramas)return;
                 const tipo=getTipo(p.nome);
-                const totalG=g*p.total;
-                detalhe.push({nome:p.nome,gramas:g,qty:p.total,total:totalG,tipo,falta:p.falta,prontoReal:p.prontoReal||p.pronto,entregue:p.entregue});
+                const totalG=info.gramas*p.total;
+                const fatias=info.isFatia?info.fatias*p.total:0;
+                totalFatias+=fatias;
+                detalhe.push({nome:p.nome,gramas:info.gramas,qty:p.total,total:totalG,tipo,fatias,isFatia:info.isFatia,falta:p.falta});
                 if(tipo==="misto"){choc.leite+=totalG/2;choc.branco+=totalG/2;}
                 else{choc[tipo]=(choc[tipo]||0)+totalG;}
               });
@@ -902,7 +912,7 @@ function App(){
                   {/* Tabela detalhada */}
                   <div style={{background:"#fff",borderRadius:18,overflow:"hidden",boxShadow:"0 2px 14px rgba(180,48,74,.07)"}}>
                     <div style={{background:`linear-gradient(135deg,${RE},${ROSA})`,padding:"12px 18px",display:"grid",gridTemplateColumns:"1fr 60px 60px 100px 100px 80px",gap:6,alignItems:"center"}}>
-                      {["🥚 Produto","Gramas","Qtd","Choc. total","Tipo","Barras 500g"].map((h,i)=>(
+                      {["🥚 Produto","Choc/un","Qtd","Fatias","Choc. total","Tipo","Barras 1kg"].map((h,i)=>(
                         <div key={i} style={{color:"#fff",fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:.5,textAlign:i===0?"left":"center"}}>{h}</div>
                       ))}
                     </div>
@@ -917,6 +927,7 @@ function App(){
                             <div style={{fontSize:12,fontWeight:600,color:"#333"}}>{d.nome}</div>
                             <div style={{textAlign:"center",fontSize:12,color:"#888"}}>{d.gramas}g</div>
                             <div style={{textAlign:"center",fontSize:12,fontWeight:700,color:"#555"}}>{d.qty}x</div>
+                            <div style={{textAlign:"center",fontSize:12,fontWeight:700,color:d.isFatia?ROSA:"#ccc"}}>{d.isFatia?d.fatias+"fat":"—"}</div>
                             <div style={{textAlign:"center",fontSize:13,fontWeight:700,color:"#6d3a1f"}}>{fmtKg(d.total)}</div>
                             <div style={{textAlign:"center"}}>
                               <span style={{padding:"3px 10px",borderRadius:20,fontSize:10,fontWeight:700,background:bgTipo,color:corTipo}}>
@@ -933,6 +944,7 @@ function App(){
                         <div style={{fontSize:11,fontWeight:700,color:RE}}>TOTAL</div>
                         <div/>
                         <div style={{textAlign:"center",fontSize:12,fontWeight:700,color:RE}}>{detalhe.reduce((s,d)=>s+d.qty,0)}x</div>
+                        <div style={{textAlign:"center",fontSize:12,fontWeight:700,color:ROSA}}>{totalFatias>0?totalFatias+" fat":"—"}</div>
                         <div style={{textAlign:"center",fontSize:13,fontWeight:700,color:RE}}>{fmtKg(total)}</div>
                         <div/>
                         <div style={{textAlign:"center",fontSize:12,fontWeight:700,color:RE}}>{Math.ceil(total/1000)}</div>
