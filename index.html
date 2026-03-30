@@ -423,13 +423,12 @@ function FormModal({initial,onSave,onClose,cardapio}){
   const producaoData=useMemo(()=>{
     const m={};
     orders.forEach(o=>{
-      const partes=(o.itens||"").split(/\s*\+\s*/);
-      partes.forEach(parte=>{
-        parte=parte.trim();
-        if(!parte)return;
-        const match=parte.match(/^(\d+)\s*[xX]\s+(.+)$/)||parte.match(/^(\d+)[xX](.+)$/);
-        const qty=match?parseInt(match[1])||1:1;
-        const nome=match?match[2].trim():parte;
+      if(!o.itens)return;
+      o.itens.split(/\s*\+\s*/).forEach(parte=>{
+        parte=parte.trim();if(!parte)return;
+        const mx=parte.match(/^(\d+)\s*[xX]\s+(.+)$/)||parte.match(/^(\d+)[xX](.+)$/);
+        const qty=mx?parseInt(mx[1])||1:1;
+        const nome=mx?mx[2].trim():parte;
         const k=nome.toLowerCase().trim();
         if(!k)return;
         if(!m[k])m[k]={nome,k,total:0,entregue:0,pronto:0,em:0,pend:0};
@@ -507,6 +506,8 @@ function FormModal({initial,onSave,onClose,cardapio}){
 function App(){
   const[view,setView]=useState("pedidos");
   const[orders,setOrders]=useState([]);
+  const[prod,setProdState]=useState(()=>{try{var s=localStorage.getItem("cp");return s?JSON.parse(s):{}}catch(e){return{}}});
+  const setProd=(k,v)=>{const n={...prod,[k]:Math.max(0,parseInt(v)||0)};setProdState(n);try{localStorage.setItem("cp",JSON.stringify(n));}catch(e){}};
   const[form,setForm]=useState(null);
   const[filter,setFilter]=useState("todos");
   const[loading,setLoading]=useState(true);
@@ -527,8 +528,6 @@ function App(){
     try{const s=localStorage.getItem("celinas-extras");return s?JSON.parse(s):[]}catch{return[];}
   });
   const[buscaPedido,setBuscaPedido]=useState("");
-  const[prod,setProdState]=useState(()=>{try{var s=localStorage.getItem("cp");return s?JSON.parse(s):{}}catch(e){return{}}});
-  const setProd=(k,v)=>{const n={...prod,[k.toLowerCase().trim()]:Math.max(0,parseInt(v)||0)};setProdState(n);try{localStorage.setItem("cp",JSON.stringify(n));}catch(e){}};
 
   // Persiste extras e preços no localStorage sempre que mudarem
   useEffect(()=>{
@@ -635,13 +634,12 @@ function App(){
   const producaoData=useMemo(()=>{
     const m={};
     orders.forEach(o=>{
-      const partes=(o.itens||"").split(/\s*\+\s*/);
-      partes.forEach(parte=>{
-        parte=parte.trim();
-        if(!parte)return;
-        const match=parte.match(/^(\d+)\s*[xX]\s+(.+)$/)||parte.match(/^(\d+)[xX](.+)$/);
-        const qty=match?parseInt(match[1])||1:1;
-        const nome=match?match[2].trim():parte;
+      if(!o.itens)return;
+      o.itens.split(/\s*\+\s*/).forEach(parte=>{
+        parte=parte.trim();if(!parte)return;
+        const mx=parte.match(/^(\d+)\s*[xX]\s+(.+)$/)||parte.match(/^(\d+)[xX](.+)$/);
+        const qty=mx?parseInt(mx[1])||1:1;
+        const nome=mx?mx[2].trim():parte;
         const k=nome.toLowerCase().trim();
         if(!k)return;
         if(!m[k])m[k]={nome,k,total:0,entregue:0,pronto:0,em:0,pend:0};
@@ -706,10 +704,10 @@ function App(){
 
         {view==="producao"&&(
           <div>
-            <h2 style={{margin:"0 0 16px",fontSize:20,color:RE}}>🏭 Controle de Producao</h2>
+            <h2 style={{margin:"0 0 16px",fontSize:20,color:RE}}>Controle de Producao</h2>
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",gap:12,marginBottom:20}}>
               {[
-                {l:"Total pedido",v:producaoData.reduce((s,p)=>s+p.total,0),c:"#555",b:"#f5f5f5"},
+                {l:"Total",v:producaoData.reduce((s,p)=>s+p.total,0),c:"#555",b:"#f5f5f5"},
                 {l:"Prontos",v:producaoData.reduce((s,p)=>s+p.pf,0),c:VE,b:"#eaf5f1"},
                 {l:"Entregues",v:producaoData.reduce((s,p)=>s+p.entregue,0),c:"#888",b:"#f0f0f0"},
                 {l:"Faltam",v:producaoData.reduce((s,p)=>s+p.falta,0),c:RE,b:RC}
