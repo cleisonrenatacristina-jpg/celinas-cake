@@ -834,7 +834,65 @@ function App(){
           <CalendarioEntregas orders={orders} agora={agora} calendarDate={calendarDate} setCalendarDate={setCalendarDate} setCalendarModal={setCalendarModal} getDias={getDias} getPrazo={getPrazo} getBadge={getBadge}/>
         </>)}
 
-        {view==="cardapio"&&(<>
+        {view==="producao"&&(
+          <div style={{background:"#fff",borderRadius:18,padding:20,marginTop:20,boxShadow:"0 2px 14px rgba(180,48,74,.07)"}}>
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16,flexWrap:"wrap"}}>
+              <span style={{fontSize:24}}>&#x1F36B;</span>
+              <div>
+                <h3 style={{margin:0,fontSize:16,color:RE}}>Calculadora de Chocolate</h3>
+                <p style={{margin:"2px 0 0",fontSize:11,color:"#aaa"}}>Total necessario baseado nos pedidos em aberto</p>
+              </div>
+            </div>
+            {(()=>{
+              const getGramas=(nome)=>{const n=nome.toLowerCase();const m=n.match(/(\d+)\s*g/);if(m)return parseInt(m[1]);if(n.includes("brigadeiro"))return 8;if(n.includes("brownie"))return 30;if(n.includes("bem casado"))return 20;if(n.includes("trufinha"))return 15;if(n.includes("bombom"))return 15;if(n.includes("copinho"))return 20;return 0;};
+              const getTipo=(nome)=>{const n=nome.toLowerCase();if(n.includes("branco"))return"branco";if(n.includes("misto"))return"misto";if(n.includes("zero"))return"zero";return"leite";};
+              const choc={leite:0,branco:0,zero:0};
+              const detalhe={};
+              producaoData.forEach(p=>{
+                const g=getGramas(p.nome);
+                if(!g)return;
+                const tipo=getTipo(p.nome);
+                const totalG=g*p.total;
+                detalhe[p.nome]={nome:p.nome,gramas:g,qty:p.total,total:totalG,tipo};
+                if(tipo==="misto"){choc.leite+=totalG/2;choc.branco+=totalG/2;}
+                else{choc[tipo]=(choc[tipo]||0)+totalG;}
+              });
+              const fmtKg=(g)=>g>=1000?(g/1000).toFixed(2).replace(".",",")+" kg":Math.round(g)+" g";
+              const total=choc.leite+choc.branco+choc.zero;
+              return(<>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))",gap:12,marginBottom:20}}>
+                  {[
+                    {label:"Ao Leite",valor:choc.leite,cor:"#8B4513",bg:"#fff5e6"},
+                    {label:"Branco",valor:choc.branco,cor:"#b8860b",bg:"#fffde7"},
+                    {label:"Zero Acucar",valor:choc.zero,cor:"#2e7d32",bg:"#eaf5f1"},
+                    {label:"Total Geral",valor:total,cor:RE,bg:RC},
+                  ].map((c,i)=>(
+                    <div key={i} style={{background:c.bg,borderRadius:14,padding:"14px 16px",borderLeft:`4px solid ${c.cor}`}}>
+                      <div style={{fontSize:11,color:"#888",marginBottom:4}}>&#x1F36B; {c.label}</div>
+                      <div style={{fontSize:20,fontWeight:700,color:c.cor}}>{fmtKg(c.valor)}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{borderTop:`1.5px solid ${RM}`,paddingTop:14}}>
+                  <div style={{fontSize:11,fontWeight:700,color:"#888",marginBottom:8,textTransform:"uppercase",letterSpacing:1}}>Por produto</div>
+                  {Object.values(detalhe).sort((a,b)=>b.total-a.total).map((d,i)=>(
+                    <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"7px 0",borderBottom:"1px solid #fce4ec",flexWrap:"wrap"}}>
+                      <div style={{flex:1,fontSize:12,color:"#333"}}>{d.nome}</div>
+                      <span style={{fontSize:11,color:"#888"}}>{d.gramas}g x {d.qty} un.</span>
+                      <span style={{fontSize:12,fontWeight:700,color:"#8B4513",minWidth:80,textAlign:"right"}}>{fmtKg(d.total)}</span>
+                      <span style={{padding:"2px 8px",borderRadius:20,fontSize:10,fontWeight:700,
+                        background:d.tipo==="branco"?"#fffde7":d.tipo==="zero"?"#eaf5f1":"#fff5e6",
+                        color:d.tipo==="branco"?"#b8860b":d.tipo==="zero"?"#2e7d32":"#8B4513"
+                      }}>{d.tipo==="zero"?"zero acucar":d.tipo}</span>
+                    </div>
+                  ))}
+                </div>
+              </>);
+            })()}
+          </div>
+        )}
+
+                {view==="cardapio"&&(<>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,flexWrap:"wrap",gap:12}}>
             <div><h2 style={{margin:0,fontSize:20,color:RE}}>🍫 Tabela de Páscoa 2026</h2><p style={{margin:"4px 0 0",fontSize:12,color:"#aaa"}}>Trabalhamos apenas com chocolate Nobre</p></div>
             <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{cats.map(c=><button key={c} onClick={()=>setCatFiltro(c)} style={{padding:"5px 12px",borderRadius:20,border:"2px solid",borderColor:catFiltro===c?RE:"#f0dde4",background:catFiltro===c?RE:"#fff",color:catFiltro===c?"#fff":"#888",fontSize:11,fontWeight:700,cursor:"pointer"}}>{c}</button>)}</div>
