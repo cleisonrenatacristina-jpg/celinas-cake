@@ -282,7 +282,7 @@ function PrecosPage({cardapio,precos,setPrecos,extrasCardapio,setExtrasCardapio}
     <>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:12}}>
         <div>
-          <h2 style={{margin:0,fontSize:20,color:RE}}>🍫 Cardápio & Preços</h2>
+          <h2 style={{margin:0,fontSize:20,color:RE}}>🍫 Cardápio e Preços</h2>
           <p style={{margin:"4px 0 0",fontSize:12,color:"#aaa"}}>{cardapio.length} produto(s) · {(extrasCardapio||[]).length} adicionado(s) por você</p>
         </div>
         <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
@@ -759,7 +759,7 @@ function App(){
             <div><div style={{fontSize:20,fontWeight:"bold",fontStyle:"italic",color:"#fff",letterSpacing:1}}>Celina's Cake</div><div style={{fontSize:9,letterSpacing:3,color:"rgba(255,255,255,.6)",textTransform:"uppercase"}}>🐣 Páscoa 2026 · {saving?"💾 salvando...":"✓ salvo"}</div></div>
           </div>
           <nav style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-            {[["dashboard","📊 Painel"],["producao","🏭 Produção"],["chocolate","🍫 Chocolate"],["whatsapp","💬 WhatsApp"],["pedidos","📋 Pedidos"],["cardapio","🎂 Cardápio"],["precos","💲 & Preços"]].map(([v,l])=>(
+            {[["dashboard","📊 Painel"],["producao","🏭 Produção"],["chocolate","🍫 Chocolate"],["whatsapp","💬 WhatsApp"],["pedidos","📋 Pedidos"],["cardapio","🎂 Cardápio"],["precos","💲 e Preços"]].map(([v,l])=>(
               <button key={v} onClick={()=>setView(v)} style={{padding:"7px 15px",borderRadius:20,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,background:view===v?"#fff":"rgba(255,255,255,.2)",color:view===v?RE:"#fff"}}>{l}</button>
             ))}
           </nav>
@@ -880,7 +880,7 @@ function App(){
         {view==="chocolate"&&(
           <div>
             <div style={{marginBottom:20}}>
-              <h2 style={{margin:0,fontSize:20,color:RE}}>🍫 Chocolate & Fatias</h2>
+              <h2 style={{margin:0,fontSize:20,color:RE}}>🍫 Chocolate e Fatias</h2>
               <p style={{margin:"4px 0 0",fontSize:12,color:"#aaa"}}>Calculado automaticamente baseado nos pedidos</p>
             </div>
 
