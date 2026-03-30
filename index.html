@@ -880,7 +880,7 @@ function App(){
                 return Math.round(g)+" g";
               };
               const total=choc.leite+choc.branco+choc.zero;
-              const barras=(g)=>Math.ceil(g/500); // 1 barra = 500g
+              const barras=(g)=>Math.ceil(g/1000); // 1 barra = 500g
               return(
                 <>
                   {/* Cards resumo */}
@@ -894,7 +894,7 @@ function App(){
                       <div key={i} style={{background:c.bg,borderRadius:16,padding:"18px 16px",borderLeft:`5px solid ${c.cor}`,boxShadow:"0 2px 10px rgba(0,0,0,.05)"}}>
                         <div style={{fontSize:13,color:c.cor,fontWeight:700,marginBottom:6}}>{c.label}</div>
                         <div style={{fontSize:28,fontWeight:700,color:c.cor}}>{fmtKg(c.valor)}</div>
-                        {c.valor>0&&<div style={{fontSize:11,color:"#888",marginTop:4}}>≈ {barras(c.valor)} barra(s) de 500g</div>}
+                        {c.valor>0&&<div style={{fontSize:11,color:"#888",marginTop:4}}>≈ {barras(c.valor)} barra(s) de 1kg</div>}
                       </div>
                     ))}
                   </div>
@@ -923,7 +923,7 @@ function App(){
                                 {d.tipo==="misto"?"½ leite + ½ branco":d.tipo==="zero"?"zero açúcar":d.tipo==="branco"?"branco":"ao leite"}
                               </span>
                             </div>
-                            <div style={{textAlign:"center",fontSize:12,fontWeight:700,color:RE}}>{Math.ceil(d.total/500)}</div>
+                            <div style={{textAlign:"center",fontSize:12,fontWeight:700,color:RE}}>{Math.ceil(d.total/1000)}</div>
                           </div>
                         );
                       })
@@ -935,7 +935,7 @@ function App(){
                         <div style={{textAlign:"center",fontSize:12,fontWeight:700,color:RE}}>{detalhe.reduce((s,d)=>s+d.qty,0)}x</div>
                         <div style={{textAlign:"center",fontSize:13,fontWeight:700,color:RE}}>{fmtKg(total)}</div>
                         <div/>
-                        <div style={{textAlign:"center",fontSize:12,fontWeight:700,color:RE}}>{Math.ceil(total/500)}</div>
+                        <div style={{textAlign:"center",fontSize:12,fontWeight:700,color:RE}}>{Math.ceil(total/1000)}</div>
                       </div>
                     )}
                   </div>
@@ -944,10 +944,10 @@ function App(){
                   {total>0&&(
                     <div style={{marginTop:16,background:"#fff",borderRadius:16,padding:18,boxShadow:"0 2px 10px rgba(0,0,0,.05)"}}>
                       <div style={{fontWeight:700,fontSize:13,color:RE,marginBottom:12}}>📋 Resumo para compra</div>
-                      {choc.leite>0&&<div style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid #fce4ec",fontSize:13}}><span>🍫 Chocolate ao Leite</span><span style={{fontWeight:700,color:"#6d3a1f"}}>{fmtKg(choc.leite)} → {Math.ceil(choc.leite/500)} barra(s)</span></div>}
-                      {choc.branco>0&&<div style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid #fce4ec",fontSize:13}}><span>🤍 Chocolate Branco</span><span style={{fontWeight:700,color:"#7a6000"}}>{fmtKg(choc.branco)} → {Math.ceil(choc.branco/500)} barra(s)</span></div>}
-                      {choc.zero>0&&<div style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid #fce4ec",fontSize:13}}><span>💚 Chocolate Zero Açúcar</span><span style={{fontWeight:700,color:"#1b5e20"}}>{fmtKg(choc.zero)} → {Math.ceil(choc.zero/500)} barra(s)</span></div>}
-                      <div style={{display:"flex",justifyContent:"space-between",padding:"10px 0",fontSize:15,marginTop:4}}><span style={{fontWeight:700,color:RE}}>📦 Total a comprar</span><span style={{fontWeight:700,color:RE}}>{fmtKg(total)} → {Math.ceil(total/500)} barras</span></div>
+                      {choc.leite>0&&<div style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid #fce4ec",fontSize:13}}><span>🍫 Chocolate ao Leite</span><span style={{fontWeight:700,color:"#6d3a1f"}}>{fmtKg(choc.leite)} → {Math.ceil(choc.leite/1000)} barra(s)</span></div>}
+                      {choc.branco>0&&<div style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid #fce4ec",fontSize:13}}><span>🤍 Chocolate Branco</span><span style={{fontWeight:700,color:"#7a6000"}}>{fmtKg(choc.branco)} → {Math.ceil(choc.branco/1000)} barra(s)</span></div>}
+                      {choc.zero>0&&<div style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid #fce4ec",fontSize:13}}><span>💚 Chocolate Zero Açúcar</span><span style={{fontWeight:700,color:"#1b5e20"}}>{fmtKg(choc.zero)} → {Math.ceil(choc.zero/1000)} barra(s)</span></div>}
+                      <div style={{display:"flex",justifyContent:"space-between",padding:"10px 0",fontSize:15,marginTop:4}}><span style={{fontWeight:700,color:RE}}>📦 Total a comprar</span><span style={{fontWeight:700,color:RE}}>{fmtKg(total)} → {Math.ceil(total/1000)} barras</span></div>
                     </div>
                   )}
                 </>
