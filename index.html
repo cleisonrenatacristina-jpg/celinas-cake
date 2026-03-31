@@ -107,25 +107,20 @@ function WhatsAppPage({onSave}){
   const[msgs,setMsgs]=useState(()=>{try{const s=localStorage.getItem("celinas-wa");return s?JSON.parse(s):ini;}catch{return ini;}});
   const[inp,setInp]=useState("");const[load,setLoad]=useState(false);const[prev,setPrev]=useState(null);const[copiado,setCopiado]=useState(false);
   const ref=useRef(null);
-  const producaoData=useMemo(function(){
+  var producaoData=useMemo(function(){
     var m={};
     orders.forEach(function(o){
       if(!o.itens)return;
-      var partes=o.itens.split("+");
-      partes.forEach(function(parte){
-        parte=parte.trim();
-        if(!parte)return;
-        var qty=1;
-        var nome=parte;
-        var m2=parte.match(/^(\d+)[xX]\s+(.+)$/);
-        if(m2){qty=parseInt(m2[1])||1;nome=m2[2].trim();}
-        var k=nome.toLowerCase().trim();
+      o.itens.split("+").forEach(function(parte){
+        var r=parseParte(parte);
+        if(!r)return;
+        var k=r.nome.toLowerCase().trim();
         if(!k)return;
-        if(!m[k])m[k]={nome:nome,k:k,total:0,entregue:0,pronto:0,pend:0};
-        m[k].total+=qty;
-        if(o.status==="entregue")m[k].entregue+=qty;
-        else if(o.status==="pronto")m[k].pronto+=qty;
-        else m[k].pend+=qty;
+        if(!m[k])m[k]={nome:r.nome,k:k,total:0,entregue:0,pronto:0,pend:0};
+        m[k].total+=r.qty;
+        if(o.status==="entregue")m[k].entregue+=r.qty;
+        else if(o.status==="pronto")m[k].pronto+=r.qty;
+        else m[k].pend+=r.qty;
       });
     });
     return Object.values(m).map(function(p){
@@ -505,7 +500,22 @@ function FormModal({initial,onSave,onClose,cardapio}){
         <button onClick={handleSave} style={{width:"100%",padding:13,borderRadius:12,border:"none",background:`linear-gradient(135deg,${RE},${ROSA})`,color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer",marginTop:4}}>💾 Salvar {total>0&&`— ${fmt(total)}`}</button></div></div>);
 }
 
+
+function parseParte(parte) {
+  parte = parte.trim();
+  if (!parte) return null;
+  var space = parte.indexOf(" ");
+  if (space > 0) {
+    var first = parte.slice(0, space).toLowerCase();
+    if (first.slice(-1) === "x" && !isNaN(parseInt(first))) {
+      return {qty: parseInt(first) || 1, nome: parte.slice(space+1).trim()};
+    }
+  }
+  return {qty: 1, nome: parte};
+}
+
 function App(){
+
   const[view,setView]=useState("pedidos");
   const[orders,setOrders]=useState([]);
   const[prod,setProdState]=useState({});
