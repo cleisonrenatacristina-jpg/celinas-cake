@@ -598,6 +598,119 @@ function App(){
     }).sort((a,b)=>b.falta-a.falta||b.pedido-a.pedido);
   },[orders,prod]);
 
+  // ============================================================
+  // CÁLCULO DE CHOCOLATE
+  // Regras por produto:
+  // Tradicional: 100% do peso = chocolate (ex: 250g → 250g choc)
+  // Clássico: 70% do peso = chocolate (ex: 250g → 175g choc)
+  // Coração: 100% do peso
+  // Ovo Fatia 700g: 6 fatias × 70g = 420g choc
+  // Ovo de Colher 500g: 50% = 250g choc
+  // Ovo Frito 60g: 60g choc
+  // Ovo Tablet 120g: 120g choc
+  // Misto = metade Ao Leite + metade Branco
+  // Zero Açúcar = categoria separada
+  // ============================================================
+  const calcChocolate=(nome,qty)=>{
+    const n=nome.toLowerCase();
+    // extrai peso em gramas do nome (ex: "250g" → 250)
+    const mPeso=n.match(/(\d+)\s*g/);
+    const peso=mPeso?parseInt(mPeso[1]):0;
+    // detecta tipo
+    const isLeite=n.includes("ao leite");
+    const isBranco=n.includes("branco");
+    const isMisto=n.includes("misto");
+    const isZero=n.includes("zero");
+
+    let leite=0,branco=0,zero=0;
+
+    const add=(gTotal)=>{
+      if(isZero){zero+=gTotal;}
+      else if(isLeite){leite+=gTotal;}
+      else if(isBranco){branco+=gTotal;}
+      else if(isMisto){leite+=gTotal/2;branco+=gTotal/2;}
+    };
+
+    // Ovo Fatia 700g → 6 × 70g = 420g por unidade
+    if(n.includes("fatia")){
+      // sabores variados → ao leite por padrão (não há variação de tipo no nome)
+      leite+=420*qty;
+      return{leite,branco,zero};
+    }
+    // Ovo de Colher → 50% do peso
+    if(n.includes("colher")&&peso>0){
+      add(peso*0.5*qty);return{leite,branco,zero};
+    }
+    // Ovo Frito
+    if(n.includes("frito")&&peso>0){
+      add(peso*qty);return{leite,branco,zero};
+    }
+    // Ovo Tablet
+    if(n.includes("tablet")&&peso>0){
+      add(peso*qty);return{leite,branco,zero};
+    }
+    // Clássico → 70% do peso
+    if(n.includes("clássico")||n.includes("classico")){
+      if(peso>0){add(peso*0.7*qty);}
+      return{leite,branco,zero};
+    }
+    // Tradicional, Coração, Colorê, Kit, Trio, Torta de Limão etc → 100%
+    if(peso>0){
+      add(peso*qty);
+    }
+    return{leite,branco,zero};
+  };
+
+  const chocolateData=useMemo(()=>{
+    // Para cada pedido, calcula chocolate necessário baseado no status:
+    // entregue → já usou (desconta do total necessário pendente)
+    // pronto/em_producao/pendente → ainda precisa
+    const resumo={leite:{total:0,pendente:0,entregue:0},branco:{total:0,pendente:0,entregue:0},zero:{total:0,pendente:0,entregue:0}};
+    const porProduto={}; // para tabela detalhada
+
+    orders.forEach(o=>{
+      parseItens(o.itens).forEach(({nome,qty})=>{
+        const choc=calcChocolate(nome,qty);
+        const key=canonico(nome);
+        if(!porProduto[key])porProduto[key]={nome,leite:0,branco:0,zero:0,entregue_leite:0,entregue_branco:0,entregue_zero:0};
+
+        ["leite","branco","zero"].forEach(t=>{
+          if(choc[t]>0){
+            resumo[t].total+=choc[t];
+            if(o.status==="entregue"){
+              resumo[t].entregue+=choc[t];
+              porProduto[key]["entregue_"+t]+=choc[t];
+            } else {
+              resumo[t].pendente+=choc[t];
+              porProduto[key][t]+=choc[t];
+            }
+          }
+        });
+      });
+    });
+
+    // pendente = ainda não entregue (precisa produzir/já pronto mas não entregue)
+    const linha=(tipo)=>({
+      total:resumo[tipo].total,
+      entregue:resumo[tipo].entregue,
+      pendente:resumo[tipo].pendente,
+      totalKg:(resumo[tipo].total/1000).toFixed(3),
+      pendenteKg:(resumo[tipo].pendente/1000).toFixed(3),
+      entregueKg:(resumo[tipo].entregue/1000).toFixed(3),
+    });
+
+    const detalhe=Object.values(porProduto)
+      .filter(p=>(p.leite+p.branco+p.zero+p.entregue_leite+p.entregue_branco+p.entregue_zero)>0)
+      .map(p=>({
+        ...p,
+        totalG:p.leite+p.branco+p.zero+p.entregue_leite+p.entregue_branco+p.entregue_zero,
+        pendG:p.leite+p.branco+p.zero,
+      }))
+      .sort((a,b)=>b.pendG-a.pendG);
+
+    return{leite:linha("leite"),branco:linha("branco"),zero:linha("zero"),detalhe};
+  },[orders]);
+
   const prodData=useMemo(()=>{
     const m={};
     orders.forEach(o=>{
@@ -655,7 +768,7 @@ function App(){
             <div><div style={{fontSize:20,fontWeight:"bold",fontStyle:"italic",color:"#fff",letterSpacing:1}}>Celina's Cake</div><div style={{fontSize:9,letterSpacing:3,color:"rgba(255,255,255,.6)",textTransform:"uppercase"}}>🐣 Páscoa 2026 · {saving?"💾 salvando...":"✓ salvo"}</div></div>
           </div>
           <nav style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-            {[["dashboard","📊 Painel"],["whatsapp","💬 WhatsApp"],["pedidos","📋 Pedidos"],["producao","🏭 Produção"],["cardapio","🍫 Cardápio"],["precos","💲 & Preços"]].map(([v,l])=>(
+            {[["dashboard","📊 Painel"],["whatsapp","💬 WhatsApp"],["pedidos","📋 Pedidos"],["producao","🏭 Produção"],["chocolate","🍫 Chocolate"],["cardapio","📋 Cardápio"],["precos","💲 & Preços"]].map(([v,l])=>(
               <button key={v} onClick={()=>setView(v)} style={{padding:"7px 15px",borderRadius:20,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,background:view===v?"#fff":"rgba(255,255,255,.2)",color:view===v?RE:"#fff"}}>{l}</button>
             ))}
           </nav>
@@ -806,6 +919,193 @@ function App(){
             </div>
           </div>
         )}
+
+        {/* ============================================================ */}
+        {/* ABA CHOCOLATE                                                 */}
+        {/* ============================================================ */}
+        {view==="chocolate"&&(()=>{
+          const{leite,branco,zero,detalhe}=chocolateData;
+          const corTipo={"Ao Leite":"#7b4f2e","Branco":"#c8a96e","Zero Açúcar":"#5a8a6a"};
+          const bgTipo={"Ao Leite":"#fdf3ec","Branco":"#fffdf0","Zero Açúcar":"#eaf5f0"};
+          const tipos=[
+            {key:"leite",label:"Ao Leite",icon:"🍫",cor:"#7b4f2e",bg:"#fdf3ec",borda:"#c8906a",d:leite},
+            {key:"branco",label:"Branco",icon:"🤍",cor:"#b8860b",bg:"#fffdf0",borda:"#d4b86a",d:branco},
+            {key:"zero",label:"Zero Açúcar",icon:"💚",cor:"#3a7a5a",bg:"#eaf5f0",borda:"#6abf9e",d:zero},
+          ].filter(t=>t.d.total>0||true);
+
+          return(
+          <div>
+            {/* Cabeçalho */}
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20,flexWrap:"wrap",gap:12}}>
+              <div>
+                <h2 style={{margin:0,fontSize:20,color:RE}}>🍫 Calculadora de Chocolate</h2>
+                <p style={{margin:"4px 0 0",fontSize:12,color:"#aaa"}}>Baseado nos pedidos · atualiza conforme entregas são marcadas</p>
+              </div>
+              <div style={{background:"#fff",borderRadius:14,padding:"10px 18px",border:`1.5px solid ${RM}`,fontSize:11,color:"#aaa",textAlign:"center"}}>
+                <div>📦 {orders.filter(o=>o.status!=="entregue").length} pedidos em aberto</div>
+                <div style={{marginTop:2}}>🎁 {orders.filter(o=>o.status==="entregue").length} já entregues</div>
+              </div>
+            </div>
+
+            {/* Cards por tipo de chocolate */}
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:14,marginBottom:22}}>
+              {tipos.map(t=>(
+                <div key={t.key} style={{background:t.bg,borderRadius:16,padding:"18px 20px",border:`2px solid ${t.borda}`,boxShadow:"0 2px 12px rgba(0,0,0,.06)"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
+                    <span style={{fontSize:22}}>{t.icon}</span>
+                    <span style={{fontWeight:700,fontSize:15,color:t.cor}}>{t.label}</span>
+                  </div>
+                  {/* Total necessário */}
+                  <div style={{marginBottom:8}}>
+                    <div style={{fontSize:10,color:"#aaa",textTransform:"uppercase",letterSpacing:1,marginBottom:2}}>📦 Total pedido</div>
+                    <div style={{fontSize:26,fontWeight:700,color:t.cor,lineHeight:1}}>{t.d.totalKg} <span style={{fontSize:14}}>kg</span></div>
+                    <div style={{fontSize:10,color:"#aaa"}}>{t.d.total.toFixed(0)}g</div>
+                  </div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:10}}>
+                    <div style={{background:"rgba(255,255,255,.7)",borderRadius:10,padding:"8px 10px",border:`1px solid ${t.borda}`}}>
+                      <div style={{fontSize:9,color:"#aaa",textTransform:"uppercase",marginBottom:2}}>⏳ Pendente</div>
+                      <div style={{fontSize:16,fontWeight:700,color:t.d.pendente>0?t.cor:"#aaa"}}>{t.d.pendenteKg} <span style={{fontSize:10}}>kg</span></div>
+                    </div>
+                    <div style={{background:"rgba(255,255,255,.7)",borderRadius:10,padding:"8px 10px",border:"1px solid #ccc"}}>
+                      <div style={{fontSize:9,color:"#aaa",textTransform:"uppercase",marginBottom:2}}>✅ Entregue</div>
+                      <div style={{fontSize:16,fontWeight:700,color:"#888"}}>{t.d.entregueKg} <span style={{fontSize:10}}>kg</span></div>
+                    </div>
+                  </div>
+                  {/* Barra de progresso (entregue / total) */}
+                  {t.d.total>0&&(
+                    <div style={{marginTop:12}}>
+                      <div style={{height:6,borderRadius:3,background:"rgba(0,0,0,.08)",overflow:"hidden"}}>
+                        <div style={{height:"100%",borderRadius:3,width:(t.d.entregue/t.d.total*100)+"%",background:t.cor,transition:"width .4s"}}/>
+                      </div>
+                      <div style={{fontSize:9,color:"#aaa",marginTop:3,textAlign:"right"}}>{Math.round(t.d.entregue/t.d.total*100)}% entregue</div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Card resumo total geral */}
+            {(()=>{
+              const totalG=leite.total+branco.total+zero.total;
+              const pendG=leite.pendente+branco.pendente+zero.pendente;
+              const entG=leite.entregue+branco.entregue+zero.entregue;
+              if(totalG===0)return null;
+              return(
+                <div style={{background:`linear-gradient(135deg,${RC},#fff8f4)`,borderRadius:16,padding:"16px 20px",marginBottom:22,border:`2px solid ${RM}`,display:"flex",gap:20,flexWrap:"wrap",alignItems:"center"}}>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:11,color:"#aaa",textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>🍫 TOTAL DE CHOCOLATE (todos os tipos)</div>
+                    <div style={{fontSize:32,fontWeight:700,color:RE,lineHeight:1}}>{(totalG/1000).toFixed(3)} <span style={{fontSize:16}}>kg</span></div>
+                  </div>
+                  <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
+                    <div style={{textAlign:"center"}}>
+                      <div style={{fontSize:10,color:"#aaa",marginBottom:2}}>⏳ Ainda precisa</div>
+                      <div style={{fontSize:20,fontWeight:700,color:RE}}>{(pendG/1000).toFixed(3)} kg</div>
+                    </div>
+                    <div style={{textAlign:"center"}}>
+                      <div style={{fontSize:10,color:"#aaa",marginBottom:2}}>✅ Já entregue</div>
+                      <div style={{fontSize:20,fontWeight:700,color:"#888"}}>{(entG/1000).toFixed(3)} kg</div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Tabela detalhada por produto */}
+            {detalhe.length===0?(
+              <div style={{background:"#fff",borderRadius:16,padding:"50px 20px",textAlign:"center",color:"#ccc"}}>
+                <div style={{fontSize:48,marginBottom:12}}>🍫</div>
+                <div>Nenhum pedido cadastrado ainda</div>
+              </div>
+            ):(
+              <div style={{background:"#fff",borderRadius:16,overflow:"hidden",boxShadow:"0 2px 12px rgba(180,48,74,.08)"}}>
+                <div style={{background:`linear-gradient(135deg,#7b4f2e,#c8906a)`,padding:"12px 16px",display:"grid",gridTemplateColumns:"1fr 90px 90px 90px 90px",gap:6,alignItems:"center"}}>
+                  {["Produto","🍫 Ao Leite","🤍 Branco","💚 Zero","📦 Total pend."].map((h,i)=>(
+                    <div key={i} style={{color:"#fff",fontSize:10,fontWeight:700,textAlign:i===0?"left":"center",opacity:.95}}>{h}</div>
+                  ))}
+                </div>
+                {detalhe.map((p,i)=>{
+                  const pend=p.leite+p.branco+p.zero;
+                  const entregue=p.entregue_leite+p.entregue_branco+p.entregue_zero;
+                  const total=pend+entregue;
+                  const pct=total>0?Math.round(entregue/total*100):0;
+                  return(
+                    <div key={i} style={{display:"grid",gridTemplateColumns:"1fr 90px 90px 90px 90px",gap:6,alignItems:"center",padding:"11px 16px",borderBottom:"1px solid #fce4ec",background:i%2===0?"#fff":"#fdf9fb",borderLeft:`4px solid ${pend===0?"#ccc":pend<200?AM:"#7b4f2e"}`}}>
+                      <div>
+                        <div style={{fontSize:12,fontWeight:600,marginBottom:2}}>{p.nome}</div>
+                        <div style={{height:4,borderRadius:2,background:"#f0dde4",overflow:"hidden"}}>
+                          <div style={{height:"100%",borderRadius:2,width:pct+"%",background:pct===100?VE:AM}}/>
+                        </div>
+                        <div style={{fontSize:9,color:"#bbb",marginTop:1}}>{pct}% entregue</div>
+                      </div>
+                      <div style={{textAlign:"center",fontSize:12,color:p.leite>0?"#7b4f2e":"#ddd",fontWeight:p.leite>0?700:400}}>
+                        {p.leite>0?(p.leite>=1000?(p.leite/1000).toFixed(2)+"kg":p.leite.toFixed(0)+"g"):"—"}
+                      </div>
+                      <div style={{textAlign:"center",fontSize:12,color:p.branco>0?"#b8860b":"#ddd",fontWeight:p.branco>0?700:400}}>
+                        {p.branco>0?(p.branco>=1000?(p.branco/1000).toFixed(2)+"kg":p.branco.toFixed(0)+"g"):"—"}
+                      </div>
+                      <div style={{textAlign:"center",fontSize:12,color:p.zero>0?"#3a7a5a":"#ddd",fontWeight:p.zero>0?700:400}}>
+                        {p.zero>0?(p.zero>=1000?(p.zero/1000).toFixed(2)+"kg":p.zero.toFixed(0)+"g"):"—"}
+                      </div>
+                      <div style={{textAlign:"center"}}>
+                        {pend===0
+                          ?<span style={{padding:"2px 7px",borderRadius:20,background:"#eaf5f1",color:VE,fontSize:11,fontWeight:700}}>✅</span>
+                          :<span style={{padding:"2px 7px",borderRadius:20,background:"#fdf3ec",color:"#7b4f2e",fontSize:12,fontWeight:700}}>
+                            {pend>=1000?(pend/1000).toFixed(2)+"kg":pend.toFixed(0)+"g"}
+                          </span>
+                        }
+                      </div>
+                    </div>
+                  );
+                })}
+                {/* Rodapé totais */}
+                {(()=>{
+                  const tL=detalhe.reduce((s,p)=>s+p.leite,0);
+                  const tB=detalhe.reduce((s,p)=>s+p.branco,0);
+                  const tZ=detalhe.reduce((s,p)=>s+p.zero,0);
+                  const tP=tL+tB+tZ;
+                  const fmtG=g=>g>=1000?(g/1000).toFixed(3)+"kg":g.toFixed(0)+"g";
+                  return(
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 90px 90px 90px 90px",gap:6,alignItems:"center",padding:"12px 16px",background:`linear-gradient(135deg,${RC},#fff8f4)`,borderTop:`2px solid ${RM}`}}>
+                      <div style={{fontSize:12,fontWeight:700,color:RE}}>TOTAL PENDENTE</div>
+                      <div style={{textAlign:"center",fontWeight:700,fontSize:12,color:"#7b4f2e"}}>{tL>0?fmtG(tL):"—"}</div>
+                      <div style={{textAlign:"center",fontWeight:700,fontSize:12,color:"#b8860b"}}>{tB>0?fmtG(tB):"—"}</div>
+                      <div style={{textAlign:"center",fontWeight:700,fontSize:12,color:"#3a7a5a"}}>{tZ>0?fmtG(tZ):"—"}</div>
+                      <div style={{textAlign:"center"}}>
+                        {tP===0
+                          ?<span style={{padding:"2px 8px",borderRadius:20,background:"#eaf5f1",color:VE,fontSize:11,fontWeight:700}}>✅ OK</span>
+                          :<span style={{padding:"2px 8px",borderRadius:20,background:RC,color:RE,fontSize:12,fontWeight:700}}>{fmtG(tP)}</span>
+                        }
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
+            {/* Legenda dos cálculos */}
+            <div style={{marginTop:14,background:"#fff",borderRadius:12,padding:"14px 16px",border:`1px solid ${RM}`}}>
+              <div style={{fontSize:11,color:"#aaa",fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>📐 Como é calculado:</div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))",gap:6}}>
+                {[
+                  ["Tradicional 250/500/800g","100% do peso = chocolate"],
+                  ["Clássico 250/500/800g","70% do peso = chocolate"],
+                  ["Coração 400/800g","100% do peso = chocolate"],
+                  ["Ovo Fatia 700g","6 fatias × 70g = 420g"],
+                  ["Ovo de Colher 500g","50% = 250g de chocolate"],
+                  ["Ovo Frito 60g","60g de chocolate"],
+                  ["Ovo Tablet 120g","120g de chocolate"],
+                  ["Misto","metade Ao Leite + metade Branco"],
+                ].map(([p,r],i)=>(
+                  <div key={i} style={{display:"flex",gap:8,alignItems:"flex-start",padding:"6px 0",borderBottom:"1px solid #fce4ec"}}>
+                    <span style={{fontSize:11,fontWeight:700,color:RE,minWidth:180}}>{p}</span>
+                    <span style={{fontSize:11,color:"#888"}}>{r}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          );
+        })()}
 
         {view==="whatsapp"&&<WhatsAppPage onSave={saveOrder}/>}
         {view==="precos"&&<PrecosPage cardapio={cardapio} precos={precos} setPrecos={setPrecos} extrasCardapio={extrasCardapio} setExtrasCardapio={setExtrasCardapio}/>}
