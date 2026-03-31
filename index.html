@@ -492,7 +492,7 @@ function App(){
 
   const[view,setView]=useState("pedidos");
   const[orders,setOrders]=useState([]);
-  const[prod,setProdState]=useState({});
+  const[prod,setProdState]=useState(()=>{try{const s=localStorage.getItem("celinas-prod");return s?JSON.parse(s):{}}catch{return{};}});
   const setProd=function(k,v){var n=Object.assign({},prod);n[k]=Math.max(0,parseInt(v)||0);setProdState(n);};
   const[form,setForm]=useState(null);
   const[filter,setFilter]=useState("todos");
@@ -515,6 +515,9 @@ function App(){
   });
   const[buscaPedido,setBuscaPedido]=useState("");
 
+  useEffect(()=>{
+    try{localStorage.setItem("celinas-prod",JSON.stringify(prod));}catch{}
+  },[prod]);
   useEffect(()=>{
     try{localStorage.setItem("celinas-extras",JSON.stringify(extrasCardapio));}catch{}
   },[extrasCardapio]);
