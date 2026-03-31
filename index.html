@@ -107,6 +107,36 @@ function WhatsAppPage({onSave}){
   const[msgs,setMsgs]=useState(()=>{try{const s=localStorage.getItem("celinas-wa");return s?JSON.parse(s):ini;}catch{return ini;}});
   const[inp,setInp]=useState("");const[load,setLoad]=useState(false);const[prev,setPrev]=useState(null);const[copiado,setCopiado]=useState(false);
   const ref=useRef(null);
+  const producaoData=useMemo(function(){
+    var m={};
+    orders.forEach(function(o){
+      if(!o.itens)return;
+      var partes=o.itens.split("+");
+      partes.forEach(function(parte){
+        parte=parte.trim();
+        if(!parte)return;
+        var qty=1;
+        var nome=parte;
+        var m2=parte.match(/^(\d+)[xX]\s+(.+)$/);
+        if(m2){qty=parseInt(m2[1])||1;nome=m2[2].trim();}
+        var k=nome.toLowerCase().trim();
+        if(!k)return;
+        if(!m[k])m[k]={nome:nome,k:k,total:0,entregue:0,pronto:0,pend:0};
+        m[k].total+=qty;
+        if(o.status==="entregue")m[k].entregue+=qty;
+        else if(o.status==="pronto")m[k].pronto+=qty;
+        else m[k].pend+=qty;
+      });
+    });
+    return Object.values(m).map(function(p){
+      var j=prod[p.k]||0;
+      var pf=Math.min(p.pronto+j,p.total-p.entregue);
+      var falta=Math.max(0,p.total-pf-p.entregue);
+      var pct=p.total>0?Math.round((pf+p.entregue)/p.total*100):0;
+      return Object.assign({},p,{j:j,pf:pf,falta:falta,pct:pct});
+    }).sort(function(a,b){return b.falta-a.falta||b.total-a.total;});
+  },[orders,prod]);
+
   useEffect(()=>{try{localStorage.setItem("celinas-wa",JSON.stringify(msgs));}catch{}if(ref.current)ref.current.scrollTop=ref.current.scrollHeight;},[msgs]);
   const limpar=()=>{setMsgs(ini);setPrev(null);try{localStorage.removeItem("celinas-wa");}catch{}};
 
@@ -478,6 +508,8 @@ function FormModal({initial,onSave,onClose,cardapio}){
 function App(){
   const[view,setView]=useState("pedidos");
   const[orders,setOrders]=useState([]);
+  const[prod,setProdState]=useState({});
+  const setProd=function(k,v){var n=Object.assign({},prod);n[k]=Math.max(0,parseInt(v)||0);setProdState(n);};
   const[form,setForm]=useState(null);
   const[filter,setFilter]=useState("todos");
   const[loading,setLoading]=useState(true);
@@ -630,6 +662,60 @@ function App(){
 
       <main style={{maxWidth:1080,margin:"0 auto",padding:"24px 20px"}}>
         {atrasados.length>0&&(<div style={{background:"#fff0f0",border:"2px solid #e05555",borderRadius:16,padding:"14px 18px",marginBottom:20}}><div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}><span style={{fontSize:22}}>🚨</span><div style={{fontWeight:700,color:"#e05555",fontSize:15}}>{atrasados.length} pedido(s) atrasado(s)!</div></div>{atrasados.map(o=>(<div key={o.id} style={{background:"#fff",borderRadius:10,padding:"10px 14px",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",borderLeft:"4px solid #e05555",marginBottom:6}}><div style={{flex:1}}><span style={{fontWeight:700,fontSize:13}}>{o.cliente}</span><span style={{fontSize:12,color:"#aaa",marginLeft:8}}>{o.itens}</span></div><span style={{fontSize:11,color:"#e05555",fontWeight:700}}>{Math.abs(getDias(o.data_retirada,agora))}d atrasado</span><button onClick={()=>updSt(o.id,"entregue")} style={{padding:"4px 10px",borderRadius:8,border:"none",background:"#e05555",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer"}}>Marcar entregue</button></div>))}</div>)}
+
+        {view==="producao"&&(
+          <div>
+            <h2 style={{margin:"0 0 16px",fontSize:20,color:RE}}>Controle de Producao</h2>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",gap:12,marginBottom:20}}>
+              {[
+                {l:"Total",v:producaoData.reduce(function(s,p){return s+p.total;},0),c:"#555",b:"#f5f5f5"},
+                {l:"Prontos",v:producaoData.reduce(function(s,p){return s+p.pf;},0),c:VE,b:"#eaf5f1"},
+                {l:"Entregues",v:producaoData.reduce(function(s,p){return s+p.entregue;},0),c:"#888",b:"#f0f0f0"},
+                {l:"Faltam",v:producaoData.reduce(function(s,p){return s+p.falta;},0),c:RE,b:RC}
+              ].map(function(c,i){return(
+                <div key={i} style={{background:c.b,borderRadius:14,padding:14,borderLeft:"4px solid "+c.c}}>
+                  <div style={{fontSize:26,fontWeight:700,color:c.c}}>{c.v}</div>
+                  <div style={{fontSize:11,color:"#aaa",marginTop:4}}>{c.l}</div>
+                </div>
+              );})}
+            </div>
+            <div style={{background:"#fff",borderRadius:16,overflow:"hidden",boxShadow:"0 2px 12px rgba(180,48,74,.08)"}}>
+              <div style={{background:"linear-gradient(135deg,"+RE+","+ROSA+")",padding:"10px 16px",display:"grid",gridTemplateColumns:"1fr 50px 55px 80px 55px",gap:6}}>
+                {["Produto","Total","Pronto","Ja feito","Falta"].map(function(h,i){return(
+                  <div key={i} style={{color:"#fff",fontSize:10,fontWeight:700,textAlign:i===0?"left":"center"}}>{h}</div>
+                );})}
+              </div>
+              {producaoData.length===0?(
+                <div style={{padding:40,textAlign:"center",color:"#ccc"}}>Nenhum pedido ainda</div>
+              ):producaoData.map(function(p,i){return(
+                <div key={i} style={{display:"grid",gridTemplateColumns:"1fr 50px 55px 80px 55px",gap:6,alignItems:"center",padding:"10px 16px",borderBottom:"1px solid #fce4ec",background:i%2===0?"#fff":"#fdf4f6",borderLeft:"4px solid "+(p.falta===0?VE:p.pct>=50?AM:RE)}}>
+                  <div>
+                    <div style={{fontSize:12,fontWeight:600}}>{p.nome}</div>
+                    <div style={{height:4,borderRadius:2,background:"#f0dde4",overflow:"hidden",marginTop:3}}>
+                      <div style={{height:"100%",borderRadius:2,width:p.pct+"%",background:p.falta===0?VE:p.pct>=50?AM:RE}}/>
+                    </div>
+                    <div style={{fontSize:9,color:"#bbb",marginTop:1}}>{p.pct}%</div>
+                  </div>
+                  <div style={{textAlign:"center",fontWeight:700,fontSize:13}}>{p.total}</div>
+                  <div style={{textAlign:"center",fontSize:12,color:p.pf>0?VE:"#ccc",fontWeight:p.pf>0?700:400}}>{p.pf||"-"}</div>
+                  <div style={{textAlign:"center"}}>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:2}}>
+                      <button onClick={function(){setProd(p.k,(prod[p.k]||0)-1);}} style={{width:20,height:20,borderRadius:"50%",border:"1px solid "+RM,background:"#fff",color:RE,fontSize:13,cursor:"pointer",padding:0}}>-</button>
+                      <input type="number" min="0" value={prod[p.k]||0} onChange={function(e){setProd(p.k,e.target.value);}} style={{width:30,textAlign:"center",border:"1px solid "+RM,borderRadius:5,fontSize:11,padding:"1px 0",outline:"none",fontWeight:700,color:RE}}/>
+                      <button onClick={function(){setProd(p.k,(prod[p.k]||0)+1);}} style={{width:20,height:20,borderRadius:"50%",border:"none",background:RE,color:"#fff",fontSize:13,cursor:"pointer",padding:0}}>+</button>
+                    </div>
+                  </div>
+                  <div style={{textAlign:"center"}}>
+                    {p.falta===0
+                      ?<span style={{padding:"2px 7px",borderRadius:20,background:"#eaf5f1",color:VE,fontSize:11,fontWeight:700}}>OK</span>
+                      :<span style={{padding:"2px 7px",borderRadius:20,background:RC,color:RE,fontSize:12,fontWeight:700}}>{p.falta}</span>
+                    }
+                  </div>
+                </div>
+              );})}
+            </div>
+          </div>
+        )}
 
         {view==="whatsapp"&&<WhatsAppPage onSave={saveOrder}/>}
         {view==="precos"&&<PrecosPage cardapio={cardapio} precos={precos} setPrecos={setPrecos} extrasCardapio={extrasCardapio} setExtrasCardapio={setExtrasCardapio}/>}
