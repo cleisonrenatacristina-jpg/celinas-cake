@@ -1138,7 +1138,10 @@ function App(){
                     <span style={{color:"#888"}}>⏳ Pendente</span>
                     <span style={{fontWeight:700,color:fretePendente>0?AM:"#aaa"}}>{fmt(fretePendente)}</span>
                   </div>
-                  <div style={{fontSize:10,color:"#bbb",marginTop:2,textAlign:"right"}}>{freteQtdEntregue}/{freteQtdTotal} entregas</div>
+                  <div style={{marginTop:6,padding:"5px 8px",background:"#fff",borderRadius:8,border:`1px solid ${AM}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                    <span style={{fontSize:11,color:"#888"}}>🚚 Pedidos c/ frete</span>
+                    <span style={{fontWeight:700,fontSize:13,color:AM}}>{freteQtdEntregue}<span style={{color:"#bbb",fontWeight:400}}>/{freteQtdTotal}</span></span>
+                  </div>
                 </div>
               </div>
             )}
