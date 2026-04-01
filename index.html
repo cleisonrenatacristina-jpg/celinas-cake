@@ -526,6 +526,7 @@ function App(){
     {id:8,cat:"Operacional",nome:"📢 Marketing / divulgação",valor:0},
     {id:9,cat:"Operacional",nome:"🏠 Aluguel / estrutura",valor:0},
   ];
+  const CATS_CUSTO=["Matéria Prima","Embalagem","Operacional","Outros"];
   const[custos,setCustos]=useState(()=>{
     try{const s=localStorage.getItem("celinas-custos");return s?JSON.parse(s):CUSTOS_DEFAULT;}catch{return CUSTOS_DEFAULT;}
   });
@@ -1160,134 +1161,149 @@ function App(){
         {/* ABA LUCRO / CUSTOS                                            */}
         {/* ============================================================ */}
         {view==="custos"&&(()=>{
-          const cats=["Matéria Prima","Embalagem","Operacional","Outros"];
           const corCat={"Matéria Prima":RE,"Embalagem":ROSA,"Operacional":AM,"Outros":"#888"};
           const bgCat={"Matéria Prima":RC,"Embalagem":"#fff0f5","Operacional":"#fffbe6","Outros":"#f5f5f5"};
+          const totalCustosCat=CATS_CUSTO.reduce((acc,cat)=>{acc[cat]=custos.filter(c=>c.cat===cat).reduce((s,c)=>s+(c.valor||0),0);return acc;},{});
+          const maxCat=Math.max(...Object.values(totalCustosCat),1);
+          const receitaPorMes=orders.reduce((acc,o)=>{
+            if(!o.pago&&!o.pagoParcial)return acc;
+            const mes=o.data_retirada?o.data_retirada.slice(0,7):"?";
+            if(!acc[mes])acc[mes]={mes,receita:0};
+            acc[mes].receita+=o.pago?(o.valor||0)+(o.frete||0):(o.entrada||0);
+            return acc;
+          },{});
+          const mesesData=Object.values(receitaPorMes).sort((a,b)=>a.mes>b.mes?1:-1).map(d=>({...d,label:d.mes==="?"?"?":new Date(d.mes+"-01").toLocaleDateString("pt-BR",{month:"short",year:"2-digit"})}));
+          const maxReceita=Math.max(...mesesData.map(d=>d.receita),totalCustos,1);
           return(
           <div>
-            {/* Cabeçalho */}
-            <div style={{marginBottom:20}}>
-              <h2 style={{margin:0,fontSize:20,color:RE}}>💹 Custos & Lucro Real</h2>
-              <p style={{margin:"4px 0 0",fontSize:12,color:"#aaa"}}>Preencha seus custos para ver o lucro real baseado no que já recebeu</p>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20,flexWrap:"wrap",gap:12}}>
+              <div>
+                <h2 style={{margin:0,fontSize:20,color:RE}}>💹 Custos & Lucro Real</h2>
+                <p style={{margin:"4px 0 0",fontSize:12,color:"#aaa"}}>Preencha seus custos livremente — o lucro é calculado automaticamente</p>
+              </div>
+              <div style={{background:lucroReal>=0?"#eaf5f1":"#fff0f0",borderRadius:14,padding:"12px 20px",border:`2px solid ${lucroReal>=0?VE:"#e05555"}`,textAlign:"center"}}>
+                <div style={{fontSize:10,color:"#aaa",textTransform:"uppercase",letterSpacing:1,marginBottom:2}}>{lucroReal>=0?"✅ Lucro Real":"⚠️ Prejuízo"}</div>
+                <div style={{fontSize:28,fontWeight:700,color:lucroReal>=0?VE:"#e05555",lineHeight:1}}>{fmt(Math.abs(lucroReal))}</div>
+                <div style={{fontSize:12,fontWeight:700,color:lucroReal>=0?VE:"#e05555",marginTop:2}}>{margemLucro>=0?"+":""}{margemLucro.toFixed(1)}% margem</div>
+              </div>
             </div>
-
-            {/* Cards de resultado */}
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(190px,1fr))",gap:14,marginBottom:24}}>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:12,marginBottom:22}}>
               {[
-                {l:"💰 Total Recebido",v:fmt(totalRecebido),c:VE,bg:"#eaf5f1",sub:"pagamentos confirmados"},
-                {l:"🔴 Total de Custos",v:fmt(totalCustos),c:"#e05555",bg:"#fff0f0",sub:"soma de todos os custos"},
-                {l:lucroReal>=0?"✅ Lucro Real":"⚠️ Prejuízo",v:fmt(Math.abs(lucroReal)),c:lucroReal>=0?VE:"#e05555",bg:lucroReal>=0?"#eaf5f1":"#fff0f0",sub:lucroReal>=0?"você está no lucro":"atenção: no prejuízo"},
-                {l:"📊 Margem de Lucro",v:(margemLucro>=0?"+":"")+margemLucro.toFixed(1)+"%",c:margemLucro>=30?VE:margemLucro>=10?AM:"#e05555",bg:margemLucro>=30?"#eaf5f1":margemLucro>=10?"#fffbe6":"#fff0f0",sub:margemLucro>=30?"ótima margem":margemLucro>=10?"margem razoável":"margem baixa"},
-              ].map((c,i)=>(
-                <div key={i} style={{background:c.bg,borderRadius:16,padding:"18px 16px",borderLeft:`4px solid ${c.c}`,boxShadow:"0 2px 10px rgba(0,0,0,.05)"}}>
-                  <div style={{fontSize:11,color:"#aaa",marginBottom:4,fontWeight:700}}>{c.l}</div>
-                  <div style={{fontSize:24,fontWeight:700,color:c.c,lineHeight:1}}>{c.v}</div>
-                  <div style={{fontSize:10,color:"#bbb",marginTop:4}}>{c.sub}</div>
-                </div>
-              ))}
+                {l:"💰 Receita recebida",v:fmt(totalRecebido),c:VE,bg:"#eaf5f1",sub:"pagamentos confirmados"},
+                {l:"🔴 Total de custos",v:fmt(totalCustos),c:"#e05555",bg:"#fff0f0",sub:"soma dos seus gastos"},
+                {l:lucroReal>=0?"✅ Lucro líquido":"⚠️ Prejuízo",v:fmt(Math.abs(lucroReal)),c:lucroReal>=0?VE:"#e05555",bg:lucroReal>=0?"#eaf5f1":"#fff0f0",sub:lucroReal>=0?"você está no positivo!":"atenção: no negativo"},
+                {l:"📊 Margem",v:(margemLucro>=0?"+":"")+margemLucro.toFixed(1)+"%",c:margemLucro>=30?VE:margemLucro>=10?AM:"#e05555",bg:margemLucro>=30?"#eaf5f1":margemLucro>=10?"#fffbe6":"#fff0f0",sub:margemLucro>=30?"ótima!":margemLucro>=10?"razoável":"baixa"},
+              ].map((c,i)=>(<div key={i} style={{background:c.bg,borderRadius:14,padding:"16px",borderLeft:`4px solid ${c.c}`}}><div style={{fontSize:10,color:"#aaa",fontWeight:700,marginBottom:4}}>{c.l}</div><div style={{fontSize:22,fontWeight:700,color:c.c,lineHeight:1}}>{c.v}</div><div style={{fontSize:10,color:"#bbb",marginTop:4}}>{c.sub}</div></div>))}
             </div>
-
-            {/* Barra receita vs custo */}
-            {totalRecebido>0&&(
-              <div style={{background:"#fff",borderRadius:16,padding:"18px 20px",marginBottom:20,boxShadow:"0 2px 12px rgba(180,48,74,.07)"}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10,flexWrap:"wrap",gap:8}}>
-                  <span style={{fontWeight:700,fontSize:13,color:"#555"}}>📊 Receita vs Custos</span>
-                  <div style={{display:"flex",gap:14,fontSize:11}}>
-                    <span style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:10,height:10,borderRadius:2,background:VE,display:"inline-block"}}/><span style={{color:"#888"}}>Lucro {fmt(lucroReal>=0?lucroReal:0)}</span></span>
-                    <span style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:10,height:10,borderRadius:2,background:"#e05555",display:"inline-block"}}/><span style={{color:"#888"}}>Custos {fmt(totalCustos)}</span></span>
+            {(totalRecebido>0||totalCustos>0)&&(
+              <div style={{background:"#fff",borderRadius:16,padding:"18px 20px",marginBottom:18,boxShadow:"0 2px 12px rgba(180,48,74,.07)"}}>
+                <div style={{fontWeight:700,fontSize:13,color:RE,marginBottom:14}}>📊 Receita vs Custos vs Lucro</div>
+                {[
+                  {l:"💰 Receita recebida",v:totalRecebido,c:VE},
+                  {l:"🔴 Total de custos",v:totalCustos,c:"#e05555"},
+                  {l:lucroReal>=0?"✅ Lucro líquido":"⚠️ Prejuízo",v:Math.abs(lucroReal),c:lucroReal>=0?VE:"#e05555"},
+                ].map((b,i)=>(
+                  <div key={i} style={{marginBottom:12}}>
+                    <div style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:4}}>
+                      <span style={{color:"#555",fontWeight:600}}>{b.l}</span>
+                      <span style={{fontWeight:700,color:b.c}}>{fmt(b.v)}</span>
+                    </div>
+                    <div style={{height:22,borderRadius:6,background:"#f5f5f5",overflow:"hidden"}}>
+                      <div style={{height:"100%",borderRadius:6,width:Math.max(2,b.v/Math.max(totalRecebido,totalCustos)*100)+"%",background:b.c,transition:"width .5s",display:"flex",alignItems:"center",paddingLeft:8}}>
+                        {b.v>0&&<span style={{fontSize:10,color:"#fff",fontWeight:700,whiteSpace:"nowrap"}}>{Math.round(b.v/Math.max(totalRecebido,totalCustos)*100)}%</span>}
+                      </div>
+                    </div>
                   </div>
+                ))}
+              </div>
+            )}
+            {mesesData.length>0&&(
+              <div style={{background:"#fff",borderRadius:16,padding:"18px 20px",marginBottom:18,boxShadow:"0 2px 12px rgba(180,48,74,.07)"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,flexWrap:"wrap",gap:6}}>
+                  <div style={{fontWeight:700,fontSize:13,color:RE}}>📅 Receita por período</div>
+                  <div style={{fontSize:11,color:"#aaa"}}>— linha vermelha = total de custos</div>
                 </div>
-                <div style={{height:28,borderRadius:8,overflow:"hidden",background:"#f5f5f5",display:"flex"}}>
-                  {totalCustos>0&&<div style={{width:Math.min(100,totalCustos/Math.max(totalRecebido,totalCustos)*100)+"%",background:"#e05555",transition:"width .4s",display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{fontSize:10,color:"#fff",fontWeight:700,whiteSpace:"nowrap",padding:"0 4px"}}>{Math.round(totalCustos/Math.max(totalRecebido,totalCustos)*100)}%</span></div>}
-                  {lucroReal>0&&<div style={{flex:1,background:VE,display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{fontSize:10,color:"#fff",fontWeight:700,whiteSpace:"nowrap",padding:"0 4px"}}>{Math.round(lucroReal/totalRecebido*100)}% lucro</span></div>}
+                <div style={{display:"flex",alignItems:"flex-end",gap:8,height:130,paddingBottom:22,position:"relative",overflowX:"auto"}}>
+                  {totalCustos>0&&<div style={{position:"absolute",bottom:22+(totalCustos/maxReceita*100)+"px",left:0,right:0,borderTop:"2px dashed #e05555",zIndex:1}}><span style={{position:"absolute",right:0,top:-16,fontSize:9,color:"#e05555",fontWeight:700,background:"#fff",padding:"1px 4px",borderRadius:4}}>custos {fmt(totalCustos)}</span></div>}
+                  {mesesData.map((d,i)=>(
+                    <div key={i} style={{flex:"0 0 auto",minWidth:48,display:"flex",flexDirection:"column",alignItems:"center",gap:4,position:"relative",zIndex:2}}>
+                      <div style={{fontSize:9,color:RE,fontWeight:700,textAlign:"center"}}>{fmt(d.receita).replace("R$ ","")}</div>
+                      <div style={{width:"100%",borderRadius:"4px 4px 0 0",background:d.receita>=(totalCustos||0)?VE:AM,height:Math.max(4,d.receita/maxReceita*100)+"px",transition:"height .4s",minWidth:36}}/>
+                      <div style={{fontSize:9,color:"#aaa",textAlign:"center",position:"absolute",bottom:-18,whiteSpace:"nowrap"}}>{d.label}</div>
+                    </div>
+                  ))}
                 </div>
-                <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"#bbb",marginTop:4}}>
-                  <span>R$ 0</span><span>Total recebido: {fmt(totalRecebido)}</span>
+                <div style={{display:"flex",gap:14,marginTop:6,fontSize:11,flexWrap:"wrap"}}>
+                  <span style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:10,height:10,borderRadius:2,background:VE,display:"inline-block"}}/> Acima dos custos</span>
+                  <span style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:10,height:10,borderRadius:2,background:AM,display:"inline-block"}}/> Abaixo dos custos</span>
                 </div>
               </div>
             )}
-
-            {/* Custos por categoria */}
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:20}}>
-              {cats.map(cat=>{
-                const itens=custos.filter(c=>c.cat===cat);
-                const total=itens.reduce((s,c)=>s+(c.valor||0),0);
-                if(!itens.length)return null;
+            <div style={{background:"#fff",borderRadius:16,overflow:"hidden",marginBottom:18,boxShadow:"0 2px 12px rgba(180,48,74,.07)"}}>
+              <div style={{background:`linear-gradient(135deg,${RE},${ROSA})`,padding:"12px 18px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <span style={{color:"#fff",fontWeight:700,fontSize:14}}>📋 Meus Custos</span>
+                <span style={{color:"rgba(255,255,255,.8)",fontSize:12}}>{custos.length} item(ns) · {fmt(totalCustos)}</span>
+              </div>
+              {custos.map((c,i)=>(
+                <div key={c.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 16px",borderBottom:"1px solid #fce4ec",background:i%2===0?"#fff":"#fdf9fb"}}>
+                  <input value={c.nome} onChange={e=>setCustos(prev=>prev.map(x=>x.id===c.id?{...x,nome:e.target.value}:x))} style={{flex:1,border:"none",background:"transparent",fontSize:13,color:"#444",outline:"none",fontWeight:500,minWidth:120}}/>
+                  <select value={c.cat} onChange={e=>setCustos(prev=>prev.map(x=>x.id===c.id?{...x,cat:e.target.value}:x))} style={{padding:"4px 8px",borderRadius:8,border:`1.5px solid ${corCat[c.cat]||"#ccc"}`,background:bgCat[c.cat]||"#f5f5f5",color:corCat[c.cat]||"#888",fontSize:10,fontWeight:700,outline:"none",cursor:"pointer"}}>
+                    {CATS_CUSTO.map(ct=><option key={ct} value={ct}>{ct}</option>)}
+                  </select>
+                  <div style={{display:"flex",alignItems:"center",gap:4,background:RC,borderRadius:9,padding:"6px 11px",border:`1.5px solid ${RM}`,minWidth:120}}>
+                    <span style={{fontSize:11,color:"#aaa"}}>R$</span>
+                    <input type="number" step="0.01" min="0" value={c.valor||""} onChange={e=>updCusto(c.id,e.target.value)} placeholder="0,00" style={{width:80,border:"none",background:"transparent",fontSize:14,fontWeight:700,color:RE,outline:"none",textAlign:"right"}}/>
+                  </div>
+                  <button onClick={()=>delCusto(c.id)} style={{padding:"5px 8px",borderRadius:8,border:"1.5px solid #ffd0cc",background:"#fff5f4",color:"#e07070",fontSize:13,cursor:"pointer"}}>🗑️</button>
+                </div>
+              ))}
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 18px",background:`linear-gradient(135deg,${RC},#fff8f4)`,borderTop:`2px solid ${RM}`}}>
+                <span style={{fontWeight:700,fontSize:13,color:RE}}>TOTAL DE CUSTOS</span>
+                <span style={{fontWeight:700,fontSize:18,color:"#e05555"}}>{fmt(totalCustos)}</span>
+              </div>
+            </div>
+            <div style={{background:"#fff",borderRadius:16,padding:"18px 20px",marginBottom:18,border:`2px dashed ${RM}`}}>
+              <div style={{fontWeight:700,fontSize:13,color:RE,marginBottom:12}}>➕ Adicionar custo</div>
+              <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"flex-end"}}>
+                <div style={{flex:2,minWidth:180}}>
+                  <label style={{fontSize:10,color:"#aaa",display:"block",marginBottom:3,textTransform:"uppercase",letterSpacing:1}}>Descrição</label>
+                  <input value={custoNovo.nome} onChange={e=>setCustoNovo(p=>({...p,nome:e.target.value}))} onKeyDown={e=>e.key==="Enter"&&addCusto()} placeholder="Ex: Papel kraft, gás, etc..." style={{width:"100%",padding:"10px 13px",borderRadius:10,border:`1.5px solid ${RM}`,fontSize:13,outline:"none",boxSizing:"border-box"}}/>
+                </div>
+                <div style={{flex:1,minWidth:140}}>
+                  <label style={{fontSize:10,color:"#aaa",display:"block",marginBottom:3,textTransform:"uppercase",letterSpacing:1}}>Categoria</label>
+                  <select value={custoNovo.cat} onChange={e=>setCustoNovo(p=>({...p,cat:e.target.value}))} style={{width:"100%",padding:"10px 13px",borderRadius:10,border:`1.5px solid ${RM}`,fontSize:13,outline:"none",background:"#fff",boxSizing:"border-box"}}>
+                    {CATS_CUSTO.map(c=><option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div style={{flex:1,minWidth:130}}>
+                  <label style={{fontSize:10,color:"#aaa",display:"block",marginBottom:3,textTransform:"uppercase",letterSpacing:1}}>Valor (R$)</label>
+                  <div style={{display:"flex",alignItems:"center",gap:4,padding:"10px 12px",borderRadius:10,border:`1.5px solid ${AM}`,background:"#fffbe6",boxSizing:"border-box"}}>
+                    <span style={{fontSize:11,color:AM}}>R$</span>
+                    <input type="number" step="0.01" min="0" value={custoNovo.valor} onChange={e=>setCustoNovo(p=>({...p,valor:e.target.value}))} onKeyDown={e=>e.key==="Enter"&&addCusto()} placeholder="0,00" style={{flex:1,border:"none",background:"transparent",fontSize:14,fontWeight:700,color:AM,outline:"none"}}/>
+                  </div>
+                </div>
+                <button onClick={addCusto} disabled={!custoNovo.nome.trim()||!custoNovo.valor} style={{padding:"10px 20px",borderRadius:10,border:"none",background:custoNovo.nome.trim()&&custoNovo.valor?`linear-gradient(135deg,${RE},${ROSA})`:"#ccc",color:"#fff",fontSize:13,fontWeight:700,cursor:custoNovo.nome.trim()&&custoNovo.valor?"pointer":"not-allowed",whiteSpace:"nowrap",alignSelf:"flex-end"}}>✅ Adicionar</button>
+              </div>
+            </div>
+            <div style={{background:"#fff",borderRadius:16,padding:"18px 20px",boxShadow:"0 2px 12px rgba(180,48,74,.07)"}}>
+              <div style={{fontWeight:700,fontSize:13,color:RE,marginBottom:14}}>🗂️ Distribuição por categoria</div>
+              {CATS_CUSTO.map(cat=>{
+                const val=totalCustosCat[cat]||0;
+                if(!val)return null;
                 return(
-                  <div key={cat} style={{background:"#fff",borderRadius:16,overflow:"hidden",boxShadow:"0 2px 12px rgba(180,48,74,.07)"}}>
-                    <div style={{background:corCat[cat]||"#888",padding:"10px 16px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                      <span style={{color:"#fff",fontWeight:700,fontSize:13}}>{cat}</span>
-                      <span style={{color:"rgba(255,255,255,.85)",fontWeight:700,fontSize:13}}>{fmt(total)}</span>
+                  <div key={cat} style={{marginBottom:12}}>
+                    <div style={{display:"flex",justifyContent:"space-between",fontSize:12,marginBottom:5}}>
+                      <span style={{fontWeight:700,color:corCat[cat]}}>{cat}</span>
+                      <span style={{fontWeight:700,color:corCat[cat]}}>{fmt(val)} <span style={{color:"#bbb",fontWeight:400}}>({totalCustos>0?Math.round(val/totalCustos*100):0}%)</span></span>
                     </div>
-                    <div style={{padding:"10px 0"}}>
-                      {itens.map(c=>(
-                        <div key={c.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 16px",borderBottom:"1px solid #fce4ec"}}>
-                          <div style={{flex:1,fontSize:12,color:"#555"}}>{c.nome}</div>
-                          <div style={{display:"flex",alignItems:"center",gap:4,background:bgCat[cat]||"#f5f5f5",borderRadius:8,padding:"5px 10px",border:`1px solid ${corCat[cat]||"#ccc"}33`}}>
-                            <span style={{fontSize:11,color:"#aaa"}}>R$</span>
-                            <input
-                              type="number" step="0.01" min="0"
-                              value={c.valor||""}
-                              onChange={e=>updCusto(c.id,e.target.value)}
-                              placeholder="0,00"
-                              style={{width:80,border:"none",background:"transparent",fontSize:13,fontWeight:700,color:corCat[cat]||"#555",outline:"none",textAlign:"right"}}
-                            />
-                          </div>
-                          <button onClick={()=>delCusto(c.id)} style={{padding:"4px 7px",borderRadius:7,border:"1.5px solid #ffd0cc",background:"#fff5f4",color:"#e07070",fontSize:12,cursor:"pointer"}}>🗑️</button>
-                        </div>
-                      ))}
+                    <div style={{height:10,borderRadius:5,background:"#f0dde4",overflow:"hidden"}}>
+                      <div style={{height:"100%",borderRadius:5,width:(val/maxCat*100)+"%",background:corCat[cat],transition:"width .4s"}}/>
                     </div>
                   </div>
                 );
               })}
-            </div>
-
-            {/* Adicionar novo custo */}
-            <div style={{background:"#fff",borderRadius:16,padding:"18px 20px",marginBottom:20,border:`2px dashed ${RM}`,boxShadow:"0 2px 12px rgba(180,48,74,.05)"}}>
-              <div style={{fontWeight:700,fontSize:13,color:RE,marginBottom:12}}>➕ Adicionar novo custo</div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 160px 140px auto",gap:10,alignItems:"flex-end",flexWrap:"wrap"}}>
-                <div>
-                  <label style={{fontSize:10,color:"#aaa",display:"block",marginBottom:3,textTransform:"uppercase",letterSpacing:1}}>Nome do custo</label>
-                  <input value={custoNovo.nome} onChange={e=>setCustoNovo(p=>({...p,nome:e.target.value}))} placeholder="Ex: Papel kraft..." style={{width:"100%",padding:"9px 12px",borderRadius:10,border:`1.5px solid ${RM}`,fontSize:13,outline:"none",boxSizing:"border-box"}}/>
-                </div>
-                <div>
-                  <label style={{fontSize:10,color:"#aaa",display:"block",marginBottom:3,textTransform:"uppercase",letterSpacing:1}}>Categoria</label>
-                  <select value={custoNovo.cat} onChange={e=>setCustoNovo(p=>({...p,cat:e.target.value}))} style={{width:"100%",padding:"9px 12px",borderRadius:10,border:`1.5px solid ${RM}`,fontSize:13,outline:"none",background:"#fff"}}>
-                    {cats.map(c=><option key={c} value={c}>{c}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label style={{fontSize:10,color:"#aaa",display:"block",marginBottom:3,textTransform:"uppercase",letterSpacing:1}}>Valor (R$)</label>
-                  <div style={{display:"flex",alignItems:"center",gap:4,padding:"9px 12px",borderRadius:10,border:`1.5px solid ${RM}`,background:RC}}>
-                    <span style={{fontSize:11,color:"#aaa"}}>R$</span>
-                    <input type="number" step="0.01" min="0" value={custoNovo.valor} onChange={e=>setCustoNovo(p=>({...p,valor:e.target.value}))} placeholder="0,00" style={{flex:1,border:"none",background:"transparent",fontSize:13,fontWeight:700,color:RE,outline:"none"}}/>
-                  </div>
-                </div>
-                <button onClick={addCusto} disabled={!custoNovo.nome.trim()||!custoNovo.valor} style={{padding:"9px 18px",borderRadius:10,border:"none",background:custoNovo.nome.trim()&&custoNovo.valor?`linear-gradient(135deg,${RE},${ROSA})`:"#ccc",color:"#fff",fontSize:13,fontWeight:700,cursor:custoNovo.nome.trim()&&custoNovo.valor?"pointer":"not-allowed",whiteSpace:"nowrap"}}>✅ Adicionar</button>
-              </div>
-            </div>
-
-            {/* Resumo por categoria */}
-            <div style={{background:"#fff",borderRadius:16,padding:"18px 20px",boxShadow:"0 2px 12px rgba(180,48,74,.07)"}}>
-              <div style={{fontWeight:700,fontSize:13,color:RE,marginBottom:14}}>📋 Resumo por categoria</div>
-              {Object.entries(custosPorCat).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).map(([cat,val])=>(
-                <div key={cat} style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
-                  <div style={{width:10,height:10,borderRadius:2,background:corCat[cat]||"#888",flexShrink:0}}/>
-                  <div style={{flex:1,fontSize:12,color:"#555"}}>{cat}</div>
-                  <div style={{width:180,height:8,borderRadius:4,background:"#f0dde4",overflow:"hidden"}}>
-                    <div style={{height:"100%",borderRadius:4,width:(totalCustos>0?val/totalCustos*100:0)+"%",background:corCat[cat]||"#888",transition:"width .3s"}}/>
-                  </div>
-                  <div style={{fontSize:12,fontWeight:700,color:corCat[cat]||"#888",minWidth:80,textAlign:"right"}}>{fmt(val)}</div>
-                  <div style={{fontSize:11,color:"#bbb",minWidth:36,textAlign:"right"}}>{totalCustos>0?Math.round(val/totalCustos*100):0}%</div>
-                </div>
-              ))}
-              {totalCustos>0&&(
-                <div style={{display:"flex",justifyContent:"space-between",paddingTop:12,borderTop:`1.5px solid ${RM}`,marginTop:4}}>
-                  <span style={{fontWeight:700,fontSize:13,color:"#555"}}>Total de Custos</span>
-                  <span style={{fontWeight:700,fontSize:15,color:"#e05555"}}>{fmt(totalCustos)}</span>
-                </div>
-              )}
-              {totalCustos===0&&<div style={{textAlign:"center",padding:"20px 0",color:"#ccc",fontSize:13}}>Preencha os valores acima para ver o resumo</div>}
+              {totalCustos===0&&<div style={{textAlign:"center",padding:"20px 0",color:"#ccc",fontSize:13}}>Preencha os valores acima para ver a distribuição</div>}
+              {totalCustos>0&&(<div style={{display:"flex",justifyContent:"space-between",paddingTop:12,borderTop:`1.5px solid ${RM}`,marginTop:8,fontSize:14}}><span style={{fontWeight:700,color:"#555"}}>Total de Custos</span><span style={{fontWeight:700,color:"#e05555"}}>{fmt(totalCustos)}</span></div>)}
             </div>
           </div>
           );
