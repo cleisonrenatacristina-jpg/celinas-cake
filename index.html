@@ -712,6 +712,19 @@ function GerenciarUsuarios({onClose}){
   );
 }
 
+const CUSTOS_DEFAULT=[
+  {id:1,cat:"Matéria Prima",nome:"🍫 Chocolate",valor:0},
+  {id:2,cat:"Matéria Prima",nome:"🧁 Recheios / ingredientes",valor:0},
+  {id:3,cat:"Embalagem",nome:"📦 Caixas e embalagens",valor:0},
+  {id:4,cat:"Embalagem",nome:"🎀 Laços, fitas e enfeites",valor:0},
+  {id:5,cat:"Operacional",nome:"💡 Energia elétrica / gás",valor:0},
+  {id:6,cat:"Operacional",nome:"👩‍🍳 Mão de obra",valor:0},
+  {id:7,cat:"Operacional",nome:"🚚 Frete que você paga",valor:0},
+  {id:8,cat:"Operacional",nome:"📢 Marketing / divulgação",valor:0},
+  {id:9,cat:"Operacional",nome:"🏠 Aluguel / estrutura",valor:0},
+];
+const CATS_CUSTO=["Matéria Prima","Embalagem","Operacional","Outros"];
+
 function App(){
 
   const[userLogado,setUserLogado]=useState(()=>getSession());
@@ -747,18 +760,6 @@ function App(){
   });
   const[buscaPedido,setBuscaPedido]=useState("");
 
-  const CUSTOS_DEFAULT=[
-    {id:1,cat:"Matéria Prima",nome:"🍫 Chocolate",valor:0},
-    {id:2,cat:"Matéria Prima",nome:"🧁 Recheios / ingredientes",valor:0},
-    {id:3,cat:"Embalagem",nome:"📦 Caixas e embalagens",valor:0},
-    {id:4,cat:"Embalagem",nome:"🎀 Laços, fitas e enfeites",valor:0},
-    {id:5,cat:"Operacional",nome:"💡 Energia elétrica / gás",valor:0},
-    {id:6,cat:"Operacional",nome:"👩‍🍳 Mão de obra",valor:0},
-    {id:7,cat:"Operacional",nome:"🚚 Frete que você paga",valor:0},
-    {id:8,cat:"Operacional",nome:"📢 Marketing / divulgação",valor:0},
-    {id:9,cat:"Operacional",nome:"🏠 Aluguel / estrutura",valor:0},
-  ];
-  const CATS_CUSTO=["Matéria Prima","Embalagem","Operacional","Outros"];
   const[custos,setCustos]=useState(()=>{
     try{const s=localStorage.getItem("celinas-custos");return s?JSON.parse(s):CUSTOS_DEFAULT;}catch{return CUSTOS_DEFAULT;}
   });
@@ -768,17 +769,28 @@ function App(){
     try{localStorage.setItem("celinas-custos",JSON.stringify(custos));}catch{}
   },[custos]);
 
-  const updCusto=(id,valor)=>{
-    const v=parseFloat(valor)||0;
-    setCustos(prev=>prev.map(c=>c.id===id?{...c,valor:v}:c));
+  const updCusto=(id,campo,valor)=>{
+    setCustos(prev=>{
+      const novo=prev.map(c=>c.id===id?{...c,[campo]:campo==="valor"?parseFloat(valor)||0:valor}:c);
+      try{localStorage.setItem("celinas-custos",JSON.stringify(novo));}catch{}
+      return novo;
+    });
   };
   const addCusto=()=>{
     if(!custoNovo.nome.trim()||!custoNovo.valor)return;
     const novo={id:Date.now(),cat:custoNovo.cat,nome:custoNovo.nome.trim(),valor:parseFloat(custoNovo.valor)||0};
-    setCustos(prev=>[...prev,novo]);
+    setCustos(prev=>{
+      const n=[...prev,novo];
+      try{localStorage.setItem("celinas-custos",JSON.stringify(n));}catch{}
+      return n;
+    });
     setCustoNovo({nome:"",cat:"Matéria Prima",valor:""});
   };
-  const delCusto=(id)=>setCustos(prev=>prev.filter(c=>c.id!==id));
+  const delCusto=(id)=>setCustos(prev=>{
+    const n=prev.filter(c=>c.id!==id);
+    try{localStorage.setItem("celinas-custos",JSON.stringify(n));}catch{}
+    return n;
+  });
 
   useEffect(()=>{
     try{localStorage.setItem("celinas-prod",JSON.stringify(prod));}catch{}
@@ -1486,13 +1498,13 @@ function App(){
               </div>
               {custos.map((c,i)=>(
                 <div key={c.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 16px",borderBottom:"1px solid #fce4ec",background:i%2===0?"#fff":"#fdf9fb"}}>
-                  <input value={c.nome} onChange={e=>setCustos(prev=>prev.map(x=>x.id===c.id?{...x,nome:e.target.value}:x))} style={{flex:1,border:"none",background:"transparent",fontSize:13,color:"#444",outline:"none",fontWeight:500,minWidth:120}}/>
-                  <select value={c.cat} onChange={e=>setCustos(prev=>prev.map(x=>x.id===c.id?{...x,cat:e.target.value}:x))} style={{padding:"4px 8px",borderRadius:8,border:`1.5px solid ${corCat[c.cat]||"#ccc"}`,background:bgCat[c.cat]||"#f5f5f5",color:corCat[c.cat]||"#888",fontSize:10,fontWeight:700,outline:"none",cursor:"pointer"}}>
+                  <input value={c.nome} onChange={e=>updCusto(c.id,"nome",e.target.value)} style={{flex:1,border:"none",background:"transparent",fontSize:13,color:"#444",outline:"none",fontWeight:500,minWidth:120}}/>
+                  <select value={c.cat} onChange={e=>updCusto(c.id,"cat",e.target.value)} style={{padding:"4px 8px",borderRadius:8,border:`1.5px solid ${corCat[c.cat]||"#ccc"}`,background:bgCat[c.cat]||"#f5f5f5",color:corCat[c.cat]||"#888",fontSize:10,fontWeight:700,outline:"none",cursor:"pointer"}}>
                     {CATS_CUSTO.map(ct=><option key={ct} value={ct}>{ct}</option>)}
                   </select>
                   <div style={{display:"flex",alignItems:"center",gap:4,background:RC,borderRadius:9,padding:"6px 11px",border:`1.5px solid ${RM}`,minWidth:120}}>
                     <span style={{fontSize:11,color:"#aaa"}}>R$</span>
-                    <input type="number" step="0.01" min="0" value={c.valor||""} onChange={e=>updCusto(c.id,e.target.value)} placeholder="0,00" style={{width:80,border:"none",background:"transparent",fontSize:14,fontWeight:700,color:RE,outline:"none",textAlign:"right"}}/>
+                    <input type="number" step="0.01" min="0" value={c.valor||""} onChange={e=>updCusto(c.id,"valor",e.target.value)} placeholder="0,00" style={{width:80,border:"none",background:"transparent",fontSize:14,fontWeight:700,color:RE,outline:"none",textAlign:"right"}}/>
                   </div>
                   <button onClick={()=>delCusto(c.id)} style={{padding:"5px 8px",borderRadius:8,border:"1.5px solid #ffd0cc",background:"#fff5f4",color:"#e07070",fontSize:13,cursor:"pointer"}}>🗑️</button>
                 </div>
